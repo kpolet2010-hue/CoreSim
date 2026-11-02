@@ -1,6 +1,8 @@
 #include "coresim/Memory.h"
 
 #include <algorithm>
+#include <stdexcept>
+#include <iostream>
 
 namespace coresim {
 
@@ -15,7 +17,22 @@ std::uint8_t Memory::read8(Address address) const {
 }
 
 void Memory::write8(Address address, std::uint8_t value) {
-    data_[address & kAddressMask] = value;
+    checkRange(address, 1);
+    data_[address] = value;
+}
+
+void Memory::write32(Address address, std::uint32_t value) {
+    checkRange(address, 4);
+    for (unsigned i = 0; i < 4; ++i) {
+        write8(address + i, static_cast<std::uint8_t>(value >> (8 * i)));
+    }
+}
+
+
+void Memory::checkRange(Address address, std::size_t size) const {
+    if (address >= kMemorySize || size > kMemorySize - address) {
+        throw std::out_of_range("Memory access out of bounds");
+    }
 }
 
 std::uint32_t Memory::read32(Address address) const {
@@ -24,12 +41,6 @@ std::uint32_t Memory::read32(Address address) const {
         value |= static_cast<std::uint32_t>(read8(address + i)) << (8 * i);
     }
     return value;
-}
-
-void Memory::write32(Address address, std::uint32_t value) {
-    for (unsigned i = 0; i < 4; ++i) {
-        write8(address + i, static_cast<std::uint8_t>(value >> (8 * i)));
-    }
 }
 
 } // namespace coresim

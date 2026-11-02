@@ -24,6 +24,8 @@ public:
     std::size_t size() const { return data_.size(); }
 
 private:
+    void checkRange(Address address, std::size_t size) const;
+
     std::vector<std::uint8_t> data_;
 };
 
