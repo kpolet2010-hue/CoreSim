@@ -18,6 +18,7 @@ add_library(coresim_core
     src/Memory.cpp
     src/Register.cpp
     src/CPUState.cpp
+    src/Decoder.cpp
 )
 target_include_directories(coresim_core PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
