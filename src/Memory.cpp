@@ -13,7 +13,8 @@ void Memory::reset() {
 }
 
 std::uint8_t Memory::read8(Address address) const {
-    return data_[address & kAddressMask];
+    checkRange(address, 1);
+    return data_[address];
 }
 
 void Memory::write8(Address address, std::uint8_t value) {
@@ -28,19 +29,19 @@ void Memory::write32(Address address, std::uint32_t value) {
     }
 }
 
-
-void Memory::checkRange(Address address, std::size_t size) const {
-    if (address >= kMemorySize || size > kMemorySize - address) {
-        throw std::out_of_range("Memory access out of bounds");
-    }
-}
-
 std::uint32_t Memory::read32(Address address) const {
+    checkRange(address, 4);
     std::uint32_t value = 0;
     for (unsigned i = 0; i < 4; ++i) {
         value |= static_cast<std::uint32_t>(read8(address + i)) << (8 * i);
     }
     return value;
+}
+
+void Memory::checkRange(Address address, std::size_t size) const {
+    if (address >= kMemorySize || size > kMemorySize - address) {
+        throw std::out_of_range("Memory access out of bounds");
+    }
 }
 
 } // namespace coresim
