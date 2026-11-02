@@ -22,8 +22,10 @@ protected:
     virtual void runTests() = 0;
 
     void check(bool condition, const char* message) {
-        if (!condition) {
-            std::cerr << "FAIL [" << name_ << "]: " << message << '\n';
+        if (condition) {
+            std::cout << "  PASS [" << name_ << "]: " << message << '\n';
+        } else {
+            std::cerr << "  FAIL [" << name_ << "]: " << message << '\n';
             ++failures_;
         }
     }
