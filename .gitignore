@@ -1,0 +1,42 @@
+# Build output
+build/
+out/
+cmake-build-*/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeUserPresets.json
+cmake_install.cmake
+CTestTestfile.cmake
+Testing/
+_deps/
+compile_commands.json
+
+# Compiled objects and binaries
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+*.exe
+*.pdb
+*.ilk
+
+# IDE / editor
+.vs/
+.vscode/
+.idea/
+*.swp
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Ninja generated files
+.ninja_deps
+.ninja_log
+build.ninja
