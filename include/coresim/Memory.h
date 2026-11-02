@@ -8,7 +8,8 @@
 namespace coresim {
 
 // 256 KB byte-addressable RAM with 18-bit addressing.
-// Multi-byte accesses are little-endian. Addresses wrap at kAddressMask.
+// Multi-byte accesses are little-endian.
+// Out-of-range accesses throw std::out_of_range.
 class Memory {
 public:
     Memory();
