@@ -14,4 +14,9 @@ void CpuTests::runTests() {
     cpu.reset();
     check(cpu.registers().get(15) == 0, "CPU reset clears registers");
 
+    cpu.state().setPc(0x100);
+    cpu.reset();
+    check(cpu.state().pc() == 0, "CPU reset clears state");
+
+
 }

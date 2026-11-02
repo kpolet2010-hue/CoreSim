@@ -1,6 +1,7 @@
 #include "test_cpu.h"
 #include "test_memory.h"
 #include "test_register.h"
+#include "test_cpu_state.h"
 #include <iostream>
 
 int main() {
@@ -10,6 +11,7 @@ int main() {
     failures += MemoryTests().run();
     failures += RegisterTests().run();
     failures += CpuTests().run();
+    failures += CpuStateTests().run();
     
     if (failures == 0) {
         std::cout << "All tests passed\n";
