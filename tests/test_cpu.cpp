@@ -9,8 +9,9 @@ void CpuTests::runTests() {
     Memory memory;
     CPU cpu(memory);
 
-    cpu.reg(15).set(0xBEEF);
-    check(cpu.reg(15).get() == 0xBEEF, "register set/get");
+    cpu.registers().set(15, 0xBEEF);
+    check(cpu.registers().get(15) == 0xBEEF, "register set/get");
     cpu.reset();
-    check(cpu.reg(15).get() == 0, "reset clears registers");
+    check(cpu.registers().get(15) == 0, "CPU reset clears registers");
+
 }
