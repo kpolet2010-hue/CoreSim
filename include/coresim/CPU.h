@@ -1,6 +1,7 @@
 #pragma once
 
 #include "coresim/Architecture.h"
+#include "coresim/CPUState.h"
 #include "coresim/Memory.h"
 #include "coresim/Register.h"
 
@@ -13,18 +14,18 @@ public:
 
     void reset();
 
-    Address pc() const { return pc_; }
-    void setPc(Address address) { pc_ = address & kAddressMask; }
-
     Memory& memory() { return memory_; }
 
     Register& registers() { return registers_; }
     const Register& registers() const { return registers_; }
 
+    CPUState& state() { return state_; }
+    const CPUState& state() const { return state_; }
+
 private:
     Memory& memory_;
     Register registers_;
-    Address pc_ = 0;
+    CPUState state_;
 };
 
 } // namespace coresim

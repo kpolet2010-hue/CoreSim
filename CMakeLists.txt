@@ -17,6 +17,7 @@ add_library(coresim_core
     src/CPU.cpp
     src/Memory.cpp
     src/Register.cpp
+    src/CPUState.cpp
 )
 target_include_directories(coresim_core PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
