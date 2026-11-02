@@ -41,3 +41,7 @@ Thumbs.db
 .ninja_deps
 .ninja_log
 build.ninja
+
+# Draw IO Temp & Backup Files
+*.drawio.*
+*.bkp
