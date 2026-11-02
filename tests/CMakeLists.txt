@@ -2,6 +2,7 @@ add_executable(coresim_tests
     test_main.cpp
     test_memory.cpp
     test_cpu.cpp
+    test_register.cpp
 )
 target_link_libraries(coresim_tests PRIVATE coresim_core)
 
