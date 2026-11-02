@@ -2,19 +2,24 @@
 
 #include "coresim/Architecture.h"
 
+#include <array>
+#include <cstddef>
+
 namespace coresim {
 
-// A single 16-bit general-purpose register.
+// 16 general-purpose 16-bit registers (R0–R15).
+// Accessing an index >= kRegisterCount throws std::out_of_range.
 class Register {
 public:
-    Register() = default;
+    Word get(std::size_t index) const;
+    void set(std::size_t index, Word value);
 
-    Word get() const { return value_; }
-    void set(Word value) { value_ = value; }
-    void reset() { value_ = 0; }
+    void reset();
 
 private:
-    Word value_ = 0;
+    void checkIndex(std::size_t index) const;
+
+    std::array<Word, kRegisterCount> registers_{};
 };
 
 } // namespace coresim

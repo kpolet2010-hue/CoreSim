@@ -4,8 +4,6 @@
 #include "coresim/Memory.h"
 #include "coresim/Register.h"
 
-#include <array>
-
 namespace coresim {
 
 // 16-bit CPU with 16 general-purpose registers.
@@ -15,17 +13,17 @@ public:
 
     void reset();
 
-    Register& reg(std::size_t index);
-    const Register& reg(std::size_t index) const;
-
     Address pc() const { return pc_; }
     void setPc(Address address) { pc_ = address & kAddressMask; }
 
     Memory& memory() { return memory_; }
 
+    Register& registers() { return registers_; }
+    const Register& registers() const { return registers_; }
+
 private:
     Memory& memory_;
-    std::array<Register, kRegisterCount> registers_{};
+    Register registers_;
     Address pc_ = 0;
 };
 
