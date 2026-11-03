@@ -28,6 +28,14 @@ namespace coresim {
             break;
         case Opcode::HLT:
             halted_ = true;
+            break;
+        case Opcode::MOV:
+            registers_.set(decoded.rd, registers_.get(decoded.rs1));
+            break;
+        case Opcode::MOVI:
+            registers_.set(decoded.rd, decoded.immediate);
+            break;
+            
         default:
             break;
         }
