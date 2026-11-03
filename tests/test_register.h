@@ -3,9 +3,9 @@
 #include "TestSuite.h"
 
 class RegisterTests : public TestSuite {
-public:
-    RegisterTests() : TestSuite("Registers") {}
+    public:
+        RegisterTests() : TestSuite("Registers") {}
 
-protected:
-    void runTests() override;
+    protected:
+        void runTests() override;
 };

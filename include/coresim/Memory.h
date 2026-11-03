@@ -7,27 +7,26 @@
 
 namespace coresim {
 
-// 256 KB byte-addressable RAM with 18-bit addressing.
-// Multi-byte accesses are little-endian.
-// Out-of-range accesses throw std::out_of_range.
-class Memory {
-public:
-    Memory();
+// 256 kb ram, addressed byte by byte
+// uses little endian byte order and throws out of range on invalid access
+    class Memory {
+        public:
+            Memory();
 
-    void reset();
+            void reset();
 
-    std::uint8_t read8(Address address) const;
-    void write8(Address address, std::uint8_t value);
+            std::uint8_t read8(Address address) const;
+            void write8(Address address, std::uint8_t value);
 
-    std::uint32_t read32(Address address) const;
-    void write32(Address address, std::uint32_t value);
+            std::uint32_t read32(Address address) const;
+            void write32(Address address, std::uint32_t value);
 
-    std::size_t size() const { return data_.size(); }
+            std::size_t size() const { return data_.size(); }
 
-private:
-    void checkRange(Address address, std::size_t size) const;
+        private:
+            void checkRange(Address address, std::size_t size) const;
 
-    std::vector<std::uint8_t> data_;
-};
+            std::vector<std::uint8_t> data_;
+        };
 
 } // namespace coresim

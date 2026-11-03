@@ -5,7 +5,7 @@
 #include <cstdint>
 
 namespace coresim {
-    // Flag bits in the FLAGS register.
+    // flag bits in flag register
     enum Flag : std::uint8_t {
         kFlagZ = 1 << 0, // Zero
         kFlagN = 1 << 1, // Negative
