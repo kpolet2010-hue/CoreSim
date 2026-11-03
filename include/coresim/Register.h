@@ -6,20 +6,19 @@
 #include <cstddef>
 
 namespace coresim {
+    // 16 general purpose 16 bit registers (R0 - R15)
+    // throws out of range if register index invalid
+    class Register {
+        public:
+            Word get(std::size_t index) const;
+            void set(std::size_t index, Word value);
 
-// 16 general-purpose 16-bit registers (R0–R15).
-// Accessing an index >= kRegisterCount throws std::out_of_range.
-class Register {
-public:
-    Word get(std::size_t index) const;
-    void set(std::size_t index, Word value);
+            void reset();
 
-    void reset();
+        private:
+            void checkIndex(std::size_t index) const;
 
-private:
-    void checkIndex(std::size_t index) const;
-
-    std::array<Word, kRegisterCount> registers_{};
-};
+            std::array<Word, kRegisterCount> registers_{};
+        };
 
 } // namespace coresim

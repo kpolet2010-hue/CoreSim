@@ -3,9 +3,9 @@
 #include "TestSuite.h"
 
 class CpuTests : public TestSuite {
-public:
-    CpuTests() : TestSuite("CPU") {}
+    public:
+        CpuTests() : TestSuite("CPU") {}
 
-protected:
-    void runTests() override;
+    protected:
+        void runTests() override;
 };

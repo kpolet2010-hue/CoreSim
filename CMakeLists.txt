@@ -12,7 +12,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(CORESIM_BUILD_TESTS "Build CoreSim tests" ON)
 
-# Core emulator library
+# core emulator library
 add_library(coresim_core
     src/CPU.cpp
     src/Memory.cpp
@@ -28,7 +28,7 @@ else()
     target_compile_options(coresim_core PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-# Emulator executable
+# emulator executable
 add_executable(coresim src/main.cpp)
 target_link_libraries(coresim PRIVATE coresim_core)
 
