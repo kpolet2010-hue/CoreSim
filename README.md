@@ -1,39 +1,81 @@
 # CoreSim
 
-CoreSim is an emulator for a custom 16-bit CPU, written in C++17.
+[![CI](https://github.com/kpolet2010-hue/CoreSim/actions/workflows/ci.yml/badge.svg)](https://github.com/kpolet2010-hue/CoreSim/actions/workflows/ci.yml)
 
-## Architecture
+CoreSim is an emulator for a custom 16-bit CPU (**CoreSim-16**), written in C++17.
 
-| Property         | Value                       |
-|------------------|-----------------------------|
-| Data width       | 16-bit                      |
-| Registers        | 16 general-purpose (R0–R15) |
-| RAM              | 256 KB                      |
-| Address space    | 18-bit                      |
-| Instruction size | 32-bit, fixed length        |
-| Byte order       | Little-endian               |
+## Architecture at a glance
+
+| Property         | Value                                   |
+|------------------|-----------------------------------------|
+| Data width       | 16-bit                                  |
+| Registers        | 16 general-purpose (R0–R15)             |
+| Special registers| PC, SP (18-bit), IR (32-bit), DBR (2-bit), FLAGS (Z, N, C, V) |
+| RAM              | 256 KB, byte-addressable                |
+| Address space    | 18-bit (`0x00000`–`0x3FFFF`)            |
+| Instruction size | 32-bit, fixed length                    |
+| Byte order       | Little-endian                           |
+
+## Current status
+
+| Component | State | Docs |
+|-----------|-------|------|
+| Memory (`Memory`) | ✅ 8/32-bit reads and writes, bounds checking | [MEMORY.md](docs/MEMORY.md) |
+| General-purpose registers (`Register`) | ✅ R0–R15, indexed access, reset | [REGISTERS.md](docs/REGISTERS.md) |
+| Special registers (`CPUState`) | ✅ PC, SP, IR, DBR, FLAGS with bit-width masking | [REGISTERS.md](docs/REGISTERS.md) |
+| Instruction decoder (`Decoder`) | ✅ R-format fields (opcode, rd, rs1, rs2) | [DECODER.md](docs/DECODER.md) |
+| CPU (`CPU`) | ✅ Owns registers + state, references memory, `reset()` | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+
+The CPU does not fetch or execute instructions yet, and no instruction set (opcode meanings) is defined.
 
 ## Building
 
+Requirements: CMake ≥ 3.16, a C++17 compiler (GCC, Clang or MSVC), optionally Ninja.
+
 ```sh
-cmake -S . -B build
-cmake --build build
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
 ./build/coresim
 ```
+
+`coresim` currently decodes a sample instruction and prints its fields followed by `CoreSim v0.1`.
 
 ## Running tests
 
 ```sh
-ctest --test-dir build
+ctest --test-dir build --output-on-failure
 ```
 
-## Layout
+or run the test binary directly to see every check:
 
-- `include/coresim/` – public headers
-- `src/` – implementation and `main.cpp`
-- `tests/` – unit tests (run via CTest)
-- `examples/` – example programs
+```sh
+./build/tests/coresim_tests
+```
 
-## Status
+See [TESTING.md](docs/TESTING.md) for the test structure and CI.
 
-Early scaffolding. CPU execution is not implemented yet.
+## Project layout
+
+```
+include/coresim/   public headers (Architecture, CPU, CPUState, Memory, Register, Decoder, DecodedInstruction)
+src/               implementation + main.cpp
+tests/             test suites (TestSuite base class, one suite per component)
+docs/              architecture documentation (Markdown + Mermaid)
+diagrams/          draw.io diagrams (registers & memory, data flow, decoder)
+examples/          example programs (none yet)
+.github/workflows/ CI pipeline (build + test on every push/PR to main)
+```
+
+## Documentation
+
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) – components, ownership and data flow
+- [MEMORY.md](docs/MEMORY.md) – RAM, little-endian layout, bounds checking
+- [REGISTERS.md](docs/REGISTERS.md) – R0–R15 and the special registers
+- [DECODER.md](docs/DECODER.md) – 32-bit instruction format and decoding
+- [TESTING.md](docs/TESTING.md) – test suites and CI
+
+Diagrams (open with [draw.io](https://www.drawio.com/)):
+
+- [diagrams/registers-memory.drawio](diagrams/registers-memory.drawio) – pages *Registers* and *Memory*
+- [diagrams/data-flow.drawio](diagrams/data-flow.drawio) – build targets, components, data flow, error handling
+- [diagrams/decoder.drawio](diagrams/decoder.drawio) – bit fields, shift + mask, `DecodedInstruction`, tested examples
