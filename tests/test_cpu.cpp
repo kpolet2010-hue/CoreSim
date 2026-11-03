@@ -18,5 +18,16 @@ void CpuTests::runTests() {
     cpu.reset();
     check(cpu.state().pc() == 0, "CPU reset clears state");
 
+    // step: fetch the instrcution at pc, sstore it in ir, advance pc by 4
+    cpu.reset();
+    memory.write32(0x0000, 0x12345678);
+    memory.write32(0x0004, 0xCAFEBABE);
 
+    cpu.step();
+    check(cpu.state().ir() == 0x12345678, "step: IR holds the first instruction");
+    check(cpu.state().pc() == 0x0004, "step: PC advances to 0x0004");
+
+    cpu.step();
+    check(cpu.state().ir() == 0xCAFEBABE, "step: IR holds the second instruction");
+    check(cpu.state().pc() == 0x0008, "step: PC advances to 0x0008");   
 }
