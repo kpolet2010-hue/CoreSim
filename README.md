@@ -23,7 +23,7 @@ CoreSim is an emulator for a custom 16-bit CPU (**CoreSim-16**), written in C++1
 | Memory (`Memory`) | ✅ 8/32-bit reads and writes, bounds checking | [MEMORY.md](docs/MEMORY.md) |
 | General-purpose registers (`Register`) | ✅ R0–R15, indexed access, reset | [REGISTERS.md](docs/REGISTERS.md) |
 | Special registers (`CPUState`) | ✅ PC, SP, IR, DBR, FLAGS with bit-width masking | [REGISTERS.md](docs/REGISTERS.md) |
-| Instruction decoder (`Decoder`) | ✅ R-format fields (opcode, rd, rs1, rs2) | [DECODER.md](docs/DECODER.md) |
+| Instruction decoder (`Decoder`) | ✅ R, I, M and J format, selected by the top 2 opcode bits | [DECODER.md](docs/DECODER.md) |
 | CPU (`CPU`) | ✅ Owns registers + state, references memory, `reset()` | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 
 The CPU does not fetch or execute instructions yet, and no instruction set (opcode meanings) is defined.
@@ -38,7 +38,7 @@ cmake --build build --parallel
 ./build/coresim
 ```
 
-`coresim` currently decodes a sample instruction and prints its fields followed by `CoreSim v0.1`.
+`coresim` currently prints `CoreSim v0.1`.
 
 ## Running tests
 
@@ -78,4 +78,4 @@ Diagrams (open with [draw.io](https://www.drawio.com/)):
 
 - [diagrams/registers-memory.drawio](diagrams/registers-memory.drawio) – pages *Registers* and *Memory*
 - [diagrams/data-flow.drawio](diagrams/data-flow.drawio) – build targets, components, data flow, error handling
-- [diagrams/decoder.drawio](diagrams/decoder.drawio) – bit fields, shift + mask, `DecodedInstruction`, tested examples
+- [diagrams/decoder.drawio](diagrams/decoder.drawio) – format selection, bit layouts of R/I/M/J, shift + mask, `DecodedInstruction`, tested examples

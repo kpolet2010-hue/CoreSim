@@ -10,35 +10,35 @@ void DecoderTests::runTests() {
     Decoder decoder;
 
     // decode
-    DecodedInstruction testCase1 = decoder.decode(0x12345000);
-    DecodedInstruction testCase2 = decoder.decode(0xABCD0000);
-    DecodedInstruction testCase3 = decoder.decode(0xFFFFFFFF);
-    DecodedInstruction testCase4 = decoder.decode(0x00000000);
-    DecodedInstruction testCase5 = decoder.decode(0xF0123000);
+    DecodedInstruction testCaseR = decoder.decode(0x12345000);
+    DecodedInstruction testCaseI = decoder.decode(0x4123ABCD);
+    DecodedInstruction testCaseM = decoder.decode(0x8012FFFC);
+    DecodedInstruction testCaseM2 = decoder.decode(0x80120008);
+    DecodedInstruction testCaseJ = decoder.decode(0xC0012345);
+    DecodedInstruction testCaseJ2 = decoder.decode(0xFFFFFFFF);
 
     // test and check values
-    check(testCase1.opcode == 0x12, "Test 1: 0x12");
-    check(testCase1.rd == 3, "Test 2: 3");
-    check(testCase1.rs1 == 4, "Test 3: 4");
-    check(testCase1.rs2 == 5, "Test 4: 5");
+    check(testCaseR.opcode == 0x12, "Decoded Value: 0x12345000, Opcode: 0x12");
+    check(testCaseR.rd == 3, "Decoded Value: 0x12345000, Rd: 3");
+    check(testCaseR.rs1 == 4, "Decoded Value: 0x12345000, Rs1: 4");
+    check(testCaseR.rs2 == 5, "Decoded Value: 0x12345000, Rs2: 5");
 
-    check(testCase2.opcode == 0xAB, "Test 1: 0xAB");
-    check(testCase2.rd == 12, "Test 2: 12");
-    check(testCase2.rs1 == 13, "Test 3: 13");
-    check(testCase2.rs2 == 0, "Test 4: 0");
-    
-    check(testCase3.opcode == 0xFF, "Test 1: 0xFF");
-    check(testCase3.rd == 15, "Test 2: 15");
-    check(testCase3.rs1 == 15, "Test 3: 15");
-    check(testCase3.rs2 == 15, "Test 4: 15");
+    check(testCaseI.opcode == 0x41, "Decoded Value: 0x4123ABCD, Opcode: 0x41");
+    check(testCaseI.rd == 2, "Decoded Value: 0x4123ABCD, Rd: 2");
+    check(testCaseI.rs1 == 3, "Decoded Value: 0x4123ABCD, Rs1: 3");
+    check(testCaseI.immediate == 0xABCD, "Decoded Value: 0x4123ABCD, Immediate: 0xABCD");
 
-    check(testCase4.opcode == 0x00, "Test 1: 0x00");
-    check(testCase4.rd == 0, "Test 2: 0");
-    check(testCase4.rs1 == 0, "Test 3: 0");
-    check(testCase4.rs2 == 0, "Test 4: 0");
+    check(testCaseM.opcode == 0x80, "Decoded Value: 0x8012FFFC, Opcode: 0x80");
+    check(testCaseM.rd == 1, "Decoded Value: 0x8012FFFC, Rd: 1");
+    check(testCaseM.rs1 == 2, "Decoded Value: 0x8012FFFC, Rs1: 2");
+    check(testCaseM.offset == -4, "Decoded Value: 0x8012FFFC, Offset: -4");
 
-    check(testCase5.opcode == 0xF0, "Test 1: 0xF0");
-    check(testCase5.rd == 1, "Test 2: 1");
-    check(testCase5.rs1 == 2, "Test 3: 2");
-    check(testCase5.rs2 == 3, "Test 4: 3");
+    check(testCaseM2.offset == 8, "Decoded Value: 0x80120008, Offset: 8");
+
+    check(testCaseJ.opcode == 0xC0, "Decoded Value: 0xC0012345, Opcode: 0xC0");
+    check(testCaseJ.address == 0x12345, "Decoded Value: 0xC0012345, Address: 0x12345");
+
+    check(testCaseJ2.opcode == 0xFF, "Decoded Value: 0xFFFFFFFF, Opcode: 0xFF");
+    check(testCaseJ2.address == 0x3FFFF, "Decoded Value: 0xFFFFFFFF, Address: 0x3FFFF");
+    check(testCaseJ2.rd == 0, "Decoded Value: 0xFFFFFFFF, Rd: 0");
 }

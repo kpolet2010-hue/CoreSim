@@ -108,7 +108,7 @@ classDiagram
   CPU cpu(memory);
   ```
 
-- **`Decoder` is stand-alone.** It is not part of the CPU and has no state.
+- **`Decoder` is stand-alone.** It is not part of the CPU and has no state. Its nested enum `Decoder::Format` (R, I, M, J) is selected from the top 2 opcode bits.
 
 `CPU::reset()` resets the registers and the CPU state. It does **not** clear memory; use `Memory::reset()` for that.
 
@@ -154,6 +154,6 @@ Invalid accesses throw `std::out_of_range`:
 |------|---------|
 | [`registers-memory.drawio`](../diagrams/registers-memory.drawio) | Page *Registers*: R0–R15, special registers, masking, flags · Page *Memory*: address space, little-endian, bounds checking |
 | [`data-flow.drawio`](../diagrams/data-flow.drawio) | Build targets, component ownership, data flow from RAM to `DecodedInstruction`, error handling |
-| [`decoder.drawio`](../diagrams/decoder.drawio) | R-format bit fields, shift + mask step by step, `DecodedInstruction`, tested examples |
+| [`decoder.drawio`](../diagrams/decoder.drawio) | Page *Formats*: format selection, R/I/M/J bit layouts, `DecodedInstruction`. Page *Shift & Mask*: extraction rule, examples, tested values |
 
 Open them with [draw.io](https://www.drawio.com/) (desktop app or browser).

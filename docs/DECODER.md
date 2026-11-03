@@ -4,91 +4,148 @@
 
 ```cpp
 Decoder decoder;
-DecodedInstruction d = decoder.decode(0x12345678);
+DecodedInstruction d = decoder.decode(0x12345000);
 // d.opcode == 0x12, d.rd == 3, d.rs1 == 4, d.rs2 == 5
 ```
 
-## Instruction format (R-format)
+Decoding happens in two steps:
 
-The decoder currently supports one format with three register operands:
+1. Read the **opcode** (bits 31–24) and pick the **format** from it.
+2. Extract the fields of that format.
+
+## Format selection
+
+The opcode says *what* an instruction does, the format says *how its 32 bits are split*. The top 2 bits of the opcode select the format:
+
+```cpp
+decoded.opcode = (instruction >> 24) & 0xFF;
+Format format  = static_cast<Format>(decoded.opcode >> 6);
+```
+
+| Opcode bits 7–6 | Opcode range | Format | `Decoder::Format` | Operands |
+|-----------------|--------------|--------|-------------------|----------|
+| `00` | `0x00`–`0x3F` | R | `kFormatR` | 3 registers |
+| `01` | `0x40`–`0x7F` | I | `kFormatI` | 2 registers + immediate |
+| `10` | `0x80`–`0xBF` | M | `kFormatM` | 2 registers + offset |
+| `11` | `0xC0`–`0xFF` | J | `kFormatJ` | address |
+
+`opcode >> 6` can only be 0–3, so every opcode belongs to exactly one format. There is no invalid case.
+
+```mermaid
+flowchart TD
+    IN["instruction (32 bit)"] --> OP["opcode = (instr >> 24) & 0xFF"]
+    OP --> F{"opcode >> 6"}
+    F -- "0" --> R["R: rd, rs1, rs2"]
+    F -- "1" --> I["I: rd, rs1, immediate"]
+    F -- "2" --> M["M: rd, rs1, offset"]
+    F -- "3" --> J["J: address"]
+```
+
+## Formats
+
+The opcode is always in bits 31–24. A 4-bit register field holds 0–15, one value per general-purpose register R0–R15.
 
 ```
  31        24 23    20 19    16 15    12 11                 0
 +------------+--------+--------+--------+--------------------+
-|   opcode   |   rd   |  rs1   |  rs2   |      (unused)      |
-|   8 bit    | 4 bit  | 4 bit  | 4 bit  |       12 bit       |
+|   opcode   |   rd   |  rs1   |  rs2   |      (unused)      |   R
 +------------+--------+--------+--------+--------------------+
+|   opcode   |   rd   |  rs1   |          immediate          |   I
++------------+--------+--------+-----------------------------+
+|   opcode   |   rd   |  rs1   |       offset (signed)       |   M
++------------+--------+--------+-----------------------------+
+|   opcode   | unused |               address                |   J
++------------+--------+--------------------------------------+
+ 31        24 23    18 17                                   0
 ```
 
-| Field | Bits | Width | Meaning |
-|-------|------|-------|---------|
-| `opcode` | 31–24 | 8 | Operation code |
-| `rd` | 23–20 | 4 | Destination register (R0–R15) |
-| `rs1` | 19–16 | 4 | Source register 1 (R0–R15) |
-| `rs2` | 15–12 | 4 | Source register 2 (R0–R15) |
-| — | 11–0 | 12 | Ignored by the decoder |
+| Format | Field | Bits | Width | Extraction |
+|--------|-------|------|-------|------------|
+| all | `opcode` | 31–24 | 8 | `(instruction >> 24) & 0xFF` |
+| R, I, M | `rd` | 23–20 | 4 | `(instruction >> 20) & 0x0F` |
+| R, I, M | `rs1` | 19–16 | 4 | `(instruction >> 16) & 0x0F` |
+| R | `rs2` | 15–12 | 4 | `(instruction >> 12) & 0x0F` |
+| I | `immediate` | 15–0 | 16 | `instruction & 0xFFFF` |
+| M | `offset` | 15–0 | 16 | `static_cast<int16_t>(instruction & 0xFFFF)` |
+| J | `address` | 17–0 | 18 | `instruction & kAddressMask` |
 
-A 4-bit register field can hold the values 0–15, exactly one per general-purpose register.
+Bits 11–0 in R and bits 23–18 in J are ignored.
 
-## How decoding works
+## How fields are extracted
 
 Each field is extracted in two steps:
 
-1. **Shift right** (`>>`) so the field ends up in the lowest bits.
-2. **Mask** (`&`) to keep only the bits of that field (`0xFF` = 8 bits, `0x0F` = 4 bits).
+1. **Shift right** (`>>`) by the field's lowest bit number, so the field ends up in the lowest bits.
+2. **Mask** (`&`) with as many 1-bits as the field is wide.
 
-```cpp
-decoded.opcode = (instruction >> 24) & 0xFF;
-decoded.rd     = (instruction >> 20) & 0x0F;
-decoded.rs1    = (instruction >> 16) & 0x0F;
-decoded.rs2    = (instruction >> 12) & 0x0F;
-```
+| Width | Mask |
+|-------|------|
+| 4 | `0x0F` |
+| 8 | `0xFF` |
+| 16 | `0xFFFF` |
+| 18 | `0x3FFFF` (`kAddressMask`) |
 
-```mermaid
-flowchart TD
-    IN["instruction<br/>0x12345678"]
-    IN -- ">> 24, & 0xFF" --> OP["opcode = 0x12"]
-    IN -- ">> 20, & 0x0F" --> RD["rd = 3"]
-    IN -- ">> 16, & 0x0F" --> RS1["rs1 = 4"]
-    IN -- ">> 12, & 0x0F" --> RS2["rs2 = 5"]
-    IN -. "bits 11–0 (0x678)" .-> X["ignored"]
-```
+Fields that start at bit 0 (`immediate`, `offset`, `address`) need no shift.
 
-### Worked example: `0x12345678`
+### Example: `rd` of `0x12345000`
 
 ```
-hex     1    2    3    4    5    6    7    8
-bin  0001 0010 0011 0100 0101 0110 0111 1000
-     \_opcode_/ \rd/ \rs1/\rs2/ \__unused__/
+instr        0001 0010 0011 0100 0101 0000 0000 0000   0x12345000
+instr >> 20                 0001 0010 0011             0x123
+& 0x0F                      0000 0000 1111
+= rd                                  0011             3
 ```
 
-| Field | Operation | Intermediate | Result |
-|-------|-----------|--------------|--------|
-| `opcode` | `>> 24` then `& 0xFF` | `0x12` | `0x12` |
-| `rd` | `>> 20` then `& 0x0F` | `0x123` | `0x3` |
-| `rs1` | `>> 16` then `& 0x0F` | `0x1234` | `0x4` |
-| `rs2` | `>> 12` then `& 0x0F` | `0x12345` | `0x5` |
+### Example: `offset` of `0x8012FFFC`
 
-The mask removes everything left of the field. For `rd`, `0x123 & 0x0F` keeps only the last hex digit, `3`.
+The offset of the M-format is **signed**, so it can also be negative (e.g. base register minus 4).
+
+```
+instr & 0xFFFF                      1111 1111 1111 1100   0xFFFC
+as uint16_t                                               65532
+static_cast<int16_t>   bit 15 = 1 → negative             -4
+stored in int32_t      sign kept (0xFFFFFFFC)             -4
+```
+
+The cast to `int16_t` reads bit 15 as the sign. Converting it to the `int32_t` member keeps the sign (sign extension). For `0x80120008`, bit 15 is 0 and the offset stays `+8`.
+
+### Example: `address` of `0xFFFFFFFF`
+
+```
+instr          1111 1111 1111 1111 1111 1111 1111 1111   0xFFFFFFFF
+& kAddressMask 0000 0000 0000 0011 1111 1111 1111 1111   0x3FFFF
+= address      0000 0000 0000 0011 1111 1111 1111 1111   0x3FFFF
+```
+
+The mask keeps the 18 address bits, so the address is always inside the memory (`0x00000`–`0x3FFFF`).
 
 ## `DecodedInstruction`
 
 `decode()` returns this struct (`include/coresim/DecodedInstruction.h`):
 
-| Member | Type | Filled by `decode()` |
-|--------|------|----------------------|
-| `opcode` | `uint8_t` | ✅ bits 31–24 |
-| `rd` | `uint8_t` | ✅ bits 23–20 |
-| `rs1` | `uint8_t` | ✅ bits 19–16 |
-| `rs2` | `uint8_t` | ✅ bits 15–12 |
-| `immediate` | `uint16_t` | ❌ always `0` |
-| `address` | `uint32_t` | ❌ always `0` |
-| `offset` | `int32_t` | ❌ always `0` |
+| Member | Type | Filled in format |
+|--------|------|------------------|
+| `opcode` | `uint8_t` | R, I, M, J |
+| `rd` | `uint8_t` | R, I, M |
+| `rs1` | `uint8_t` | R, I, M |
+| `rs2` | `uint8_t` | R |
+| `immediate` | `uint16_t` | I |
+| `offset` | `int32_t` | M |
+| `address` | `uint32_t` | J |
 
-The struct is value-initialized (`DecodedInstruction decoded{};`), so all members that are not set stay `0`.
+The struct is value-initialized (`DecodedInstruction decoded{};`), so every member the format does not use stays `0`. For example, a J-format instruction always has `rd == rs1 == rs2 == 0`.
 
 ## Current behaviour
 
-- The decoder does not check the opcode. Every 8-bit value is accepted, and no opcode has a meaning yet.
+- Opcodes only select the format. No opcode has a meaning (ADD, LOAD, …) yet.
 - The decoder has no state. `decode()` only depends on its input.
-- `src/main.cpp` decodes `0xFFFFFFFF` as a demo and prints `Opcode 255`, `RD 15`, `RS1 15`, `RS2 15`.
+- Tested examples (`tests/test_decoder.cpp`):
+
+| Instruction | Format | Expected fields |
+|-------------|--------|-----------------|
+| `0x12345000` | R | opcode `0x12`, rd 3, rs1 4, rs2 5 |
+| `0x4123ABCD` | I | opcode `0x41`, rd 2, rs1 3, immediate `0xABCD` |
+| `0x8012FFFC` | M | opcode `0x80`, rd 1, rs1 2, offset −4 |
+| `0x80120008` | M | offset +8 |
+| `0xC0012345` | J | opcode `0xC0`, address `0x12345` |
+| `0xFFFFFFFF` | J | opcode `0xFF`, address `0x3FFFF`, rd 0 |
