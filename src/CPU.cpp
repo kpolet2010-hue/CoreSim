@@ -1,4 +1,5 @@
 #include "coresim/CPU.h"
+#include "coresim/Opcode.h"
 
 namespace coresim {
 
@@ -7,12 +8,29 @@ namespace coresim {
     void CPU::reset() {
         registers_.reset();
         state_.reset();
+        halted_ = false;
     }
 
     void CPU::step() {
-        Instruction instruction = memory_.read32(state_.pc());          // read line where space is
-        state_.setIr(instruction);                                      // memorize what was read
-        state_.setPc(state_.pc() + 4);                                  // space 4 bytes further
+        if (halted_) {
+            return;
+        }
+
+        Instruction instruction = memory_.read32(state_.pc());
+        state_.setIr(instruction);
+        state_.setPc(state_.pc() + 4);
+
+        DecodedInstruction decoded = decoder_.decode(instruction);
+
+        switch (static_cast<Opcode>(decoded.opcode)) 
+        {
+        case Opcode::NOP:
+            break;
+        case Opcode::HLT:
+            halted_ = true;
+        default:
+            break;
+        }
     }
 
 } // namespace coresim
