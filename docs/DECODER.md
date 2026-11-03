@@ -71,6 +71,8 @@ The opcode is always in bits 31–24. A 4-bit register field holds 0–15, one v
 
 Bits 11–0 in R and bits 23–18 in J are ignored.
 
+The decoder only extracts the fields. Which of them an instruction uses is specified in [ISA.md](ISA.md#operands). For `STORE`, the `rd` field holds the register whose value is stored.
+
 ## How fields are extracted
 
 Each field is extracted in two steps:
