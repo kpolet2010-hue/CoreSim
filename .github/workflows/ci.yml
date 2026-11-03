@@ -21,7 +21,6 @@ jobs:
     timeout-minutes: 15
 
     env:
-      # Picked up by CMake (>= 3.17) so the documented commands stay unchanged.
       CMAKE_CXX_COMPILER_LAUNCHER: ccache
       CCACHE_DIR: ${{ github.workspace }}/.ccache
 
