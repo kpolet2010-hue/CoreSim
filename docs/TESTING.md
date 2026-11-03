@@ -63,7 +63,7 @@ classDiagram
 | Registers | `test_register.cpp` | R0–R15 hold independent values, full 16-bit range, `reset()`, index 16 throws |
 | CPU | `test_cpu.cpp` | Register access through the CPU, `CPU::reset()` clears registers and state |
 | CPUState | `test_cpu_state.cpp` | Initial values, 18-bit masking of PC/SP, 2-bit masking of DBR, 32-bit IR, setting/clearing single flags, `reset()` |
-| Decoder | `test_decoder.cpp` | Field extraction for `0x12345000`, `0xABCD0000`, `0xFFFFFFFF`, `0x00000000`, `0xF0123000` |
+| Decoder | `test_decoder.cpp` | One case per format (R `0x12345000`, I `0x4123ABCD`, M `0x8012FFFC`/`0x80120008`, J `0xC0012345`/`0xFFFFFFFF`), negative and positive offset, 18-bit address masking |
 
 ## Adding a suite
 
