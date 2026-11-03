@@ -9,4 +9,10 @@ namespace coresim {
         state_.reset();
     }
 
+    void CPU::step() {
+        Instruction instruction = memory_.read32(state_.pc());          // read line where space is
+        state_.setIr(instruction);                                      // memorize what was read
+        state_.setPc(state_.pc() + 4);                                  // space 4 bytes further
+    }
+
 } // namespace coresim

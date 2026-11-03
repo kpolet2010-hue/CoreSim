@@ -12,6 +12,7 @@ namespace coresim {
             explicit CPU(Memory& memory);
 
             void reset();
+            void step();
 
             Memory& memory() { return memory_; }
 
