@@ -5,6 +5,7 @@ add_executable(coresim_tests
     test_register.cpp
     test_cpu_state.cpp
     test_decoder.cpp
+    test_isa.cpp
 )
 target_link_libraries(coresim_tests PRIVATE coresim_core)
 

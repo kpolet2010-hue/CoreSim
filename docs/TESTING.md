@@ -20,6 +20,7 @@ The test binary prints each check and a summary per suite:
 [CPU] passed
 [CPUState] passed
 [Decoder] passed
+[Isa] passed
 All tests passed
 ```
 
@@ -41,6 +42,7 @@ classDiagram
     TestSuite <|-- CpuTests
     TestSuite <|-- CpuStateTests
     TestSuite <|-- DecoderTests
+    TestSuite <|-- IsaTests
 ```
 
 | File | Purpose |
@@ -64,6 +66,7 @@ classDiagram
 | CPU | `test_cpu.cpp` | Register access through the CPU, `CPU::reset()` clears registers and state |
 | CPUState | `test_cpu_state.cpp` | Initial values, 18-bit masking of PC/SP, 2-bit masking of DBR, 32-bit IR, setting/clearing single flags, `reset()` |
 | Decoder | `test_decoder.cpp` | One case per format (R `0x12345000`, I `0x4123ABCD`, M `0x8012FFFC`/`0x80120008`, J `0xC0012345`/`0xFFFFFFFF`), negative and positive offset, 18-bit address masking |
+| Isa | `test_isa.cpp` | Value of all 26 opcodes, each opcode lies in the range of its format (`opcode >> 6`) |
 
 ## Adding a suite
 
