@@ -51,4 +51,21 @@ void CpuTests::runTests() {
     cpu.reset();
     check(!cpu.halted(), "reset clears halted");
 
+    // MOVI loads an immediate, MOV copies a register, neither changes the flags
+    cpu.reset();
+    memory.write32(0x0000, 0x40101234);                     // MOVI R1, 0x1234
+    memory.write32(0x0004, 0x00210000);                     // MOV  R2, R1
+    memory.write32(0x0008, 0x0E000000);                     // HLT
+
+    cpu.step();
+    check(cpu.registers().get(1) == 0x1234, "MOVI: R1 = 0x1234");
+    check(cpu.state().flags() == 0, "MOVI: flags unchanged");
+
+    cpu.step();
+    check(cpu.registers().get(2) == 0x1234, "MOV: R2 = 0x1234");
+    check(cpu.registers().get(1) == 0x1234, "MOV: R1 still 0x1234 (copy, not move)");
+    check(cpu.state().flags() == 0, "MOV: flags unchanged");
+
+    cpu.step();
+    check(cpu.halted(), "MOV program: cpu halts at HLT");
 }
