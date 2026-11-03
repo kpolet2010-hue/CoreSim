@@ -72,4 +72,49 @@ void IsaTests::runTests() {
     check(static_cast<uint8_t>(Opcode::JN) >> 6 == Decoder::kFormatJ, "Opcode: JN, Format: J");
     check(static_cast<uint8_t>(Opcode::JC) >> 6 == Decoder::kFormatJ, "Opcode: JC, Format: J");
     check(static_cast<uint8_t>(Opcode::CALL) >> 6 == Decoder::kFormatJ, "Opcode: CALL, Format: J");
+
+    // operand encoding: fields land where the ISA conventions expect them
+    Decoder decoder;
+
+    // STORE R3, [R2 - 4]: value register rs is encoded in the rd field
+    DecodedInstruction store = decoder.decode(0x8132FFFC);
+    check(store.opcode == static_cast<uint8_t>(Opcode::STORE), "Decoded Value: 0x8132FFFC, Opcode: STORE");
+    check(store.rd == 3, "Decoded Value: 0x8132FFFC, Rs (rd field): 3");
+    check(store.rs1 == 2, "Decoded Value: 0x8132FFFC, Rs1 (base): 2");
+    check(store.offset == -4, "Decoded Value: 0x8132FFFC, Offset: -4");
+    check(store.rs2 == 0, "Decoded Value: 0x8132FFFC, Rs2: 0 (no rs2 in M-format)");
+
+    // LOAD R1, [R2 + 8]
+    DecodedInstruction load = decoder.decode(0x80120008);
+    check(load.opcode == static_cast<uint8_t>(Opcode::LOAD), "Decoded Value: 0x80120008, Opcode: LOAD");
+    check(load.rd == 1, "Decoded Value: 0x80120008, Rd: 1");
+    check(load.rs1 == 2, "Decoded Value: 0x80120008, Rs1 (base): 2");
+    check(load.offset == 8, "Decoded Value: 0x80120008, Offset: 8");
+
+    // PUSH R5 uses rs1, POP R7 uses rd
+    DecodedInstruction push = decoder.decode(0x0A050000);
+    check(push.opcode == static_cast<uint8_t>(Opcode::PUSH), "Decoded Value: 0x0A050000, Opcode: PUSH");
+    check(push.rs1 == 5, "Decoded Value: 0x0A050000, Rs1: 5");
+    check(push.rd == 0, "Decoded Value: 0x0A050000, Rd: 0 (unused)");
+
+    DecodedInstruction pop = decoder.decode(0x0B700000);
+    check(pop.opcode == static_cast<uint8_t>(Opcode::POP), "Decoded Value: 0x0B700000, Opcode: POP");
+    check(pop.rd == 7, "Decoded Value: 0x0B700000, Rd: 7");
+    check(pop.rs1 == 0, "Decoded Value: 0x0B700000, Rs1: 0 (unused)");
+
+    // MOVI R1, 0x1234
+    DecodedInstruction movi = decoder.decode(0x40101234);
+    check(movi.opcode == static_cast<uint8_t>(Opcode::MOVI), "Decoded Value: 0x40101234, Opcode: MOVI");
+    check(movi.rd == 1, "Decoded Value: 0x40101234, Rd: 1");
+    check(movi.immediate == 0x1234, "Decoded Value: 0x40101234, Immediate: 0x1234");
+
+    // CALL 0x00100: absolute 18-bit address
+    DecodedInstruction call = decoder.decode(0xC5000100);
+    check(call.opcode == static_cast<uint8_t>(Opcode::CALL), "Decoded Value: 0xC5000100, Opcode: CALL");
+    check(call.address == 0x00100, "Decoded Value: 0xC5000100, Address: 0x00100");
+
+    // HLT: all register fields unused and 0
+    DecodedInstruction hlt = decoder.decode(0x0E000000);
+    check(hlt.opcode == static_cast<uint8_t>(Opcode::HLT), "Decoded Value: 0x0E000000, Opcode: HLT");
+    check(hlt.rd == 0 && hlt.rs1 == 0 && hlt.rs2 == 0, "Decoded Value: 0x0E000000, Rd/Rs1/Rs2: 0 (unused)");
 }
