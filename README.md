@@ -24,9 +24,10 @@ CoreSim is an emulator for a custom 16-bit CPU (**CoreSim-16**), written in C++1
 | General-purpose registers (`Register`) | ✅ R0–R15, indexed access, reset | [REGISTERS.md](docs/REGISTERS.md) |
 | Special registers (`CPUState`) | ✅ PC, SP, IR, DBR, FLAGS with bit-width masking | [REGISTERS.md](docs/REGISTERS.md) |
 | Instruction decoder (`Decoder`) | ✅ R, I, M and J format, selected by the top 2 opcode bits | [DECODER.md](docs/DECODER.md) |
+| Instruction set (`Opcode`) | ✅ 26 opcodes with values in their format ranges | [ISA.md](docs/ISA.md) |
 | CPU (`CPU`) | ✅ Owns registers + state, references memory, `reset()` | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 
-The CPU does not fetch or execute instructions yet, and no instruction set (opcode meanings) is defined.
+The CPU does not fetch or execute instructions yet. The opcodes are named, but none of them has any behaviour.
 
 ## Building
 
@@ -57,11 +58,11 @@ See [TESTING.md](docs/TESTING.md) for the test structure and CI.
 ## Project layout
 
 ```
-include/coresim/   public headers (Architecture, CPU, CPUState, Memory, Register, Decoder, DecodedInstruction)
+include/coresim/   public headers (Architecture, CPU, CPUState, Memory, Register, Decoder, DecodedInstruction, Opcode)
 src/               implementation + main.cpp
 tests/             test suites (TestSuite base class, one suite per component)
 docs/              architecture documentation (Markdown + Mermaid)
-diagrams/          draw.io diagrams (registers & memory, data flow, decoder)
+diagrams/          draw.io diagrams (registers & memory, data flow, decoder, ISA)
 examples/          example programs (none yet)
 .github/workflows/ CI pipeline (build + test on every push/PR to main)
 ```
@@ -72,6 +73,7 @@ examples/          example programs (none yet)
 - [MEMORY.md](docs/MEMORY.md) – RAM, little-endian layout, bounds checking
 - [REGISTERS.md](docs/REGISTERS.md) – R0–R15 and the special registers
 - [DECODER.md](docs/DECODER.md) – 32-bit instruction format and decoding
+- [ISA.md](docs/ISA.md) – opcodes, their values and formats
 - [TESTING.md](docs/TESTING.md) – test suites and CI
 
 Diagrams (open with [draw.io](https://www.drawio.com/)):
@@ -79,3 +81,4 @@ Diagrams (open with [draw.io](https://www.drawio.com/)):
 - [diagrams/registers-memory.drawio](diagrams/registers-memory.drawio) – pages *Registers* and *Memory*
 - [diagrams/data-flow.drawio](diagrams/data-flow.drawio) – build targets, components, data flow, error handling
 - [diagrams/decoder.drawio](diagrams/decoder.drawio) – format selection, bit layouts of R/I/M/J, shift + mask, `DecodedInstruction`, tested examples
+- [diagrams/isa.drawio](diagrams/isa.drawio) – opcode map and opcode groups

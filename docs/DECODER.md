@@ -137,7 +137,7 @@ The struct is value-initialized (`DecodedInstruction decoded{};`), so every memb
 
 ## Current behaviour
 
-- Opcodes only select the format. No opcode has a meaning (ADD, LOAD, …) yet.
+- Opcodes only select the format. Their names and values are defined in `Opcode.h` (see [ISA.md](ISA.md)), but the decoder does not use them and no instruction is executed yet.
 - The decoder has no state. `decode()` only depends on its input.
 - Tested examples (`tests/test_decoder.cpp`):
 
