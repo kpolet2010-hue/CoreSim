@@ -100,4 +100,37 @@ void CpuTests::runTests() {
     cpu.step();
     check(cpu.registers().get(3) == 0, "ADD: 0xFFFF + 1 wraps to 0");
     check(cpu.state().flag(kFlagZ), "ADD: 0xFFFF + 1 sets Z");
+    check(cpu.state().flag(kFlagC), "ADD: 0xFFFF + 1 sets C");
+    check(!cpu.state().flag(kFlagN), "ADD: 0xFFFF + 1 clears N");
+    check(!cpu.state().flag(kFlagV), "ADD: 0xFFFF + 1 clears V");
+
+    // ADD: signed overflow sets N and V
+    cpu.reset();
+    memory.write32(0x0000, 0x40107FFF);                     // MOVI R1, 0x7FFF
+    memory.write32(0x0004, 0x40200001);                     // MOVI R2, 1
+    memory.write32(0x0008, 0x01312000);                     // ADD R3, R1, R2
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(3) == 0x8000, "ADD: 0x7FFF + 1 = 0x8000");
+    check(!cpu.state().flag(kFlagZ), "ADD: 0x7FFF + 1 clears Z");
+    check(cpu.state().flag(kFlagN), "ADD: 0x7FFF + 1 sets N");
+    check(!cpu.state().flag(kFlagC), "ADD: 0x7FFF + 1 clears C");
+    check(cpu.state().flag(kFlagV), "ADD: 0x7FFF + 1 sets V");
+
+    // ADD: carry and signed overflow at the same time
+    cpu.reset();
+    memory.write32(0x0000, 0x40108000);                     // MOVI R1, 0x8000
+    memory.write32(0x0004, 0x40208000);                     // MOVI R2, 0x8000
+    memory.write32(0x0008, 0x01312000);                     // ADD R3, R1, R2
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(3) == 0, "ADD: 0x8000 + 0x8000 wraps to 0");
+    check(cpu.state().flag(kFlagZ), "ADD: 0x8000 + 0x8000 sets Z");
+    check(!cpu.state().flag(kFlagN), "ADD: 0x8000 + 0x8000 clears N");
+    check(cpu.state().flag(kFlagC), "ADD: 0x8000 + 0x8000 sets C");
+    check(cpu.state().flag(kFlagV), "ADD: 0x8000 + 0x8000 sets V");
 }
