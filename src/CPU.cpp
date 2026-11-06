@@ -1,6 +1,5 @@
 #include "coresim/CPU.h"
 #include "coresim/Opcode.h"
-
 #include <cstdint>
 
 namespace coresim {
@@ -56,6 +55,12 @@ namespace coresim {
             Word b = registers_.get(decoded.rs2);
             Word result = subWithFlags(a, b);
             registers_.set(decoded.rd, result);
+            break;
+        }
+        case Opcode::CMP: {
+            Word a = registers_.get(decoded.rs1);
+            Word b = registers_.get(decoded.rs2);
+            subWithFlags(a, b);
             break;
         }
         default:
