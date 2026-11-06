@@ -51,6 +51,13 @@ namespace coresim {
             registers_.set(decoded.rd, result);
             break;
         }
+        case Opcode::SUB: {
+            Word a = registers_.get(decoded.rs1);
+            Word b = registers_.get(decoded.rs2);
+            Word result = subWithFlags(a, b);
+            registers_.set(decoded.rd, result);
+            break;
+        }
         default:
             break;
         }
@@ -63,6 +70,15 @@ namespace coresim {
         state_.setFlag(kFlagN, (result >> 15) & 1);
         state_.setFlag(kFlagC, sum > 0xFFFF);
         state_.setFlag(kFlagV, ((a ^ result) & (b ^ result) & 0x8000) != 0);
+        return result;
+    }
+
+    Word CPU::subWithFlags(Word a, Word b) {
+        Word result = (a - b) & 0xFFFF;
+        state_.setFlag(kFlagZ, result == 0);
+        state_.setFlag(kFlagN, (result >> 15) & 1);
+        state_.setFlag(kFlagC, a < b);
+        state_.setFlag(kFlagV, ((a ^ b) & (a ^ result) & 0x8000) != 0);
         return result;
     }
 
