@@ -87,6 +87,7 @@ void CpuTests::runTests() {
     check(cpu.registers().get(3) == 12, "ADD: R3 = 5 + 7 = 12");
     check(cpu.registers().get(1) == 5, "ADD: R1 unchanged");
     check(cpu.registers().get(2) == 7, "ADD: R2 unchanged");
+    check(!cpu.state().flag(kFlagZ), "ADD: 5 + 7 clears Z");
 
     // ADD wraps around at 16 bits
     cpu.reset();
@@ -98,4 +99,5 @@ void CpuTests::runTests() {
     cpu.step();
     cpu.step();
     check(cpu.registers().get(3) == 0, "ADD: 0xFFFF + 1 wraps to 0");
+    check(cpu.state().flag(kFlagZ), "ADD: 0xFFFF + 1 sets Z");
 }
