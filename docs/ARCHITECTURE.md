@@ -137,7 +137,7 @@ flowchart LR
 | 4. Decode | `decoder_.decode(instruction)` |
 | 5. Execute | `switch` on `Opcode` |
 
-Only six opcodes are executed so far. All others are decoded but do nothing:
+Only eight opcodes are executed so far. All others are decoded but do nothing:
 
 | Opcode | Effect |
 |--------|--------|
@@ -147,8 +147,10 @@ Only six opcodes are executed so far. All others are decoded but do nothing:
 | `MOVI` (`0x40`) | `R[rd] = imm` |
 | `ADD` (`0x01`) | `R[rd] = (R[rs1] + R[rs2]) & 0xFFFF`, updates Z, N, C, V |
 | `ADDI` (`0x41`) | `R[rd] = (R[rs1] + imm) & 0xFFFF`, updates Z, N, C, V |
+| `SUB` (`0x02`) | `R[rd] = (R[rs1] - R[rs2]) & 0xFFFF`, updates Z, N, C, V |
+| `CMP` (`0x09`) | computes `R[rs1] - R[rs2]`, updates Z, N, C, V, stores no result |
 
-`ADD` and `ADDI` share the private helper `addWithFlags(a, b)`, which computes the result and updates the flags.
+`ADD` and `ADDI` share the private helper `addWithFlags(a, b)`, `SUB` and `CMP` share `subWithFlags(a, b)`. Both compute the result, update the flags and return the result.
 
 ```cpp
 Memory memory;

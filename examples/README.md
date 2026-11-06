@@ -1,6 +1,6 @@
 # Examples
 
-There are no example programs yet. The CPU only executes `NOP`, `HLT`, `MOV`, `MOVI`, `ADD` and `ADDI` so far.
+There are no example programs yet. The CPU only executes `NOP`, `HLT`, `MOV`, `MOVI`, `ADD`, `ADDI`, `SUB` and `CMP` so far.
 
 What can be tried today:
 
