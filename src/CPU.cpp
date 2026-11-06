@@ -1,6 +1,8 @@
 #include "coresim/CPU.h"
 #include "coresim/Opcode.h"
 
+#include <cstdint>
+
 namespace coresim {
 
     CPU::CPU(Memory& memory) : memory_(memory) {}
@@ -35,10 +37,33 @@ namespace coresim {
         case Opcode::MOVI:
             registers_.set(decoded.rd, decoded.immediate);
             break;
-            
+        case Opcode::ADD: {
+            Word a = registers_.get(decoded.rs1);
+            Word b = registers_.get(decoded.rs2);
+            Word result = addWithFlags(a, b);
+            registers_.set(decoded.rd, result);
+            break;
+        }
+        case Opcode::ADDI: {
+            Word a = registers_.get(decoded.rs1);
+            Word b = decoded.immediate;
+            Word result = addWithFlags(a, b);
+            registers_.set(decoded.rd, result);
+            break;
+        }
         default:
             break;
         }
+    }
+
+    Word CPU::addWithFlags(Word a, Word b) {
+        Word result = (a + b) & 0xFFFF;
+        std::uint32_t sum = a + b;
+        state_.setFlag(kFlagZ, result == 0);
+        state_.setFlag(kFlagN, (result >> 15) & 1);
+        state_.setFlag(kFlagC, sum > 0xFFFF);
+        state_.setFlag(kFlagV, ((a ^ result) & (b ^ result) & 0x8000) != 0);
+        return result;
     }
 
 } // namespace coresim

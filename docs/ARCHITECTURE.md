@@ -137,7 +137,7 @@ flowchart LR
 | 4. Decode | `decoder_.decode(instruction)` |
 | 5. Execute | `switch` on `Opcode` |
 
-Only four opcodes are executed so far. All others are decoded but do nothing:
+Only six opcodes are executed so far. All others are decoded but do nothing:
 
 | Opcode | Effect |
 |--------|--------|
@@ -145,6 +145,10 @@ Only four opcodes are executed so far. All others are decoded but do nothing:
 | `HLT` (`0x0E`) | sets the halted state, further `step()` calls do nothing until `reset()` |
 | `MOV` (`0x00`) | `R[rd] = R[rs1]` |
 | `MOVI` (`0x40`) | `R[rd] = imm` |
+| `ADD` (`0x01`) | `R[rd] = (R[rs1] + R[rs2]) & 0xFFFF`, updates Z, N, C, V |
+| `ADDI` (`0x41`) | `R[rd] = (R[rs1] + imm) & 0xFFFF`, updates Z, N, C, V |
+
+`ADD` and `ADDI` share the private helper `addWithFlags(a, b)`, which computes the result and updates the flags.
 
 ```cpp
 Memory memory;
