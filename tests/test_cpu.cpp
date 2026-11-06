@@ -68,4 +68,24 @@ void CpuTests::runTests() {
 
     cpu.step();
     check(cpu.halted(), "MOV program: cpu halts at HLT");
+
+    // ADD stores the sum in rd and keeps its operands
+    cpu.reset();
+    memory.write32(0x0000, 0x40100005);                     // MOVI R1, 5
+    memory.write32(0x0004, 0x40200007);                     // MOVI R2, 7
+    memory.write32(0x0008, 0x01312000);                     // ADD R3, R1, R2
+
+    cpu.step();
+    check(cpu.registers().get(1) == 5, "MOVI: R1 = 5");
+    check(cpu.state().flags() == 0, "MOVI: flags unchanged");
+
+    cpu.step();
+    check(cpu.registers().get(2) == 7, "MOVI: R2 = 7");
+    check(cpu.registers().get(1) == 5, "MOVI: R1 still 5");
+
+    cpu.step();
+    check(cpu.registers().get(3) == 12, "ADD: R3 = 5 + 7 = 12");
+    check(cpu.registers().get(1) == 5, "ADD: R1 unchanged");
+    check(cpu.registers().get(2) == 7, "ADD: R2 unchanged");
+
 }
