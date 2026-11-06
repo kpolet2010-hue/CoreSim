@@ -137,12 +137,14 @@ flowchart LR
 | 4. Decode | `decoder_.decode(instruction)` |
 | 5. Execute | `switch` on `Opcode` |
 
-Only two opcodes are executed so far. All others are decoded but do nothing:
+Only four opcodes are executed so far. All others are decoded but do nothing:
 
 | Opcode | Effect |
 |--------|--------|
 | `NOP` (`0x0D`) | nothing |
 | `HLT` (`0x0E`) | sets the halted state, further `step()` calls do nothing until `reset()` |
+| `MOV` (`0x00`) | `R[rd] = R[rs1]` |
+| `MOVI` (`0x40`) | `R[rd] = imm` |
 
 ```cpp
 Memory memory;
