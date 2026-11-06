@@ -14,6 +14,7 @@ option(CORESIM_BUILD_TESTS "Build CoreSim tests" ON)
 
 # core emulator library
 add_library(coresim_core
+    src/ALU.cpp
     src/CPU.cpp
     src/Memory.cpp
     src/Register.cpp

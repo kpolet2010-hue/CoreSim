@@ -294,4 +294,154 @@ void CpuTests::runTests() {
     check(!cpu.state().flag(kFlagN), "CMP: 0x8000, 1 clears N");
     check(!cpu.state().flag(kFlagC), "CMP: 0x8000, 1 clears C");
     check(cpu.state().flag(kFlagV), "CMP: 0x8000, 1 sets V");
+
+    // CMP: a set rd field does not make it write a register
+    cpu.reset();
+    memory.write32(0x0000, 0x40301234);                     // MOVI R3, 0x1234
+    memory.write32(0x0004, 0x40100005);                     // MOVI R1, 5
+    memory.write32(0x0008, 0x40200003);                     // MOVI R2, 3
+    memory.write32(0x000C, 0x09312000);                     // CMP R1, R2 with rd field = 3
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(3) == 0x1234, "CMP: R3 unchanged (rd field is ignored)");
+
+    // MUL keeps the lower 16 bits and sets C if the product does not fit
+    cpu.reset();
+    memory.write32(0x0000, 0x4010FFFF);                     // MOVI R1, 0xFFFF
+    memory.write32(0x0004, 0x4020FFFF);                     // MOVI R2, 0xFFFF
+    memory.write32(0x0008, 0x03312000);                     // MUL R3, R1, R2
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(3) == 1, "MUL: 0xFFFF * 0xFFFF keeps lower 16 bits");
+    check(cpu.registers().get(1) == 0xFFFF, "MUL: R1 unchanged");
+    check(cpu.registers().get(2) == 0xFFFF, "MUL: R2 unchanged");
+    check(cpu.state().flags() == kFlagC, "MUL: 0xFFFF * 0xFFFF sets only C");
+
+    // DIV: unsigned division
+    cpu.reset();
+    memory.write32(0x0000, 0x4010FFFF);                     // MOVI R1, 0xFFFF
+    memory.write32(0x0004, 0x40200002);                     // MOVI R2, 2
+    memory.write32(0x0008, 0x04312000);                     // DIV R3, R1, R2
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(3) == 0x7FFF, "DIV: 0xFFFF / 2 = 0x7FFF");
+    check(cpu.registers().get(1) == 0xFFFF, "DIV: R1 unchanged");
+    check(cpu.registers().get(2) == 2, "DIV: R2 unchanged");
+    check(cpu.state().flags() == 0, "DIV: 0xFFFF / 2 sets no flags");
+
+    // DIV by zero throws, rd and flags stay unchanged, PC is already advanced
+    cpu.reset();
+    memory.write32(0x0000, 0x40100005);                     // MOVI R1, 5
+    memory.write32(0x0004, 0x40301234);                     // MOVI R3, 0x1234
+    memory.write32(0x0008, 0x04312000);                     // DIV R3, R1, R2 (R2 = 0)
+
+    cpu.step();
+    cpu.step();
+    cpu.state().setFlag(kFlagC, true);
+    check(throwsRuntimeError([&] { cpu.step(); }), "DIV: division by zero throws runtime_error");
+    check(cpu.registers().get(3) == 0x1234, "DIV: division by zero keeps R3");
+    check(cpu.state().flags() == kFlagC, "DIV: division by zero keeps the flags");
+    check(cpu.state().pc() == 0x000C, "DIV: division by zero has advanced PC");
+
+    // AND, OR, XOR store their result and clear C and V left by the ADD before
+    cpu.reset();
+    memory.write32(0x0000, 0x40108000);                     // MOVI R1, 0x8000
+    memory.write32(0x0004, 0x01411000);                     // ADD R4, R1, R1, sets C and V
+    memory.write32(0x0008, 0x4010FF00);                     // MOVI R1, 0xFF00
+    memory.write32(0x000C, 0x40200FF0);                     // MOVI R2, 0x0FF0
+    memory.write32(0x0010, 0x05312000);                     // AND R3, R1, R2
+    memory.write32(0x0014, 0x01411000);                     // ADD R4, R1, R1, sets C
+    memory.write32(0x0018, 0x06312000);                     // OR R3, R1, R2
+    memory.write32(0x001C, 0x01411000);                     // ADD R4, R1, R1, sets C
+    memory.write32(0x0020, 0x07312000);                     // XOR R3, R1, R2
+
+    cpu.step();
+    cpu.step();
+    check(cpu.state().flag(kFlagC) && cpu.state().flag(kFlagV), "ADD: 0x8000 + 0x8000 sets C and V before AND");
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(3) == 0x0F00, "AND: 0xFF00 & 0x0FF0 = 0x0F00");
+    check(cpu.state().flags() == 0, "AND: clears the old C and V, no flags set");
+
+    cpu.step();
+    check(cpu.state().flag(kFlagC), "ADD: 0xFF00 + 0xFF00 sets C before OR");
+    cpu.step();
+    check(cpu.registers().get(3) == 0xFFF0, "OR: 0xFF00 | 0x0FF0 = 0xFFF0");
+    check(cpu.state().flags() == kFlagN, "OR: clears the old C, sets only N");
+
+    cpu.step();
+    check(cpu.state().flag(kFlagC), "ADD: 0xFF00 + 0xFF00 sets C before XOR");
+    cpu.step();
+    check(cpu.registers().get(3) == 0xF0F0, "XOR: 0xFF00 ^ 0x0FF0 = 0xF0F0");
+    check(cpu.state().flags() == kFlagN, "XOR: clears the old C, sets only N");
+    check(cpu.registers().get(1) == 0xFF00, "AND, OR, XOR: R1 unchanged");
+    check(cpu.registers().get(2) == 0x0FF0, "AND, OR, XOR: R2 unchanged");
+
+    // NOT only reads rs1, a set rs2 field is ignored
+    cpu.reset();
+    memory.write32(0x0000, 0x40100F0F);                     // MOVI R1, 0x0F0F
+    memory.write32(0x0004, 0x40201234);                     // MOVI R2, 0x1234
+    memory.write32(0x0008, 0x08312000);                     // NOT R3, R1 with rs2 field = 2
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(3) == 0xF0F0, "NOT: ~0x0F0F = 0xF0F0");
+    check(cpu.registers().get(1) == 0x0F0F, "NOT: R1 unchanged");
+    check(cpu.state().flags() == kFlagN, "NOT: ~0x0F0F sets only N");
+
+    // destination equals source: operands are read before the result is written
+    cpu.reset();
+    memory.write32(0x0000, 0x40100006);                     // MOVI R1, 6
+    memory.write32(0x0004, 0x40200007);                     // MOVI R2, 7
+    memory.write32(0x0008, 0x03112000);                     // MUL R1, R1, R2
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(1) == 42, "MUL: R1 = 6 * 7 = 42 (rd equals rs1)");
+    check(cpu.registers().get(2) == 7, "MUL: R2 unchanged (rd equals rs1)");
+
+    // non-ALU instructions keep the flags, Z and C are set, N and V are cleared
+    cpu.reset();
+    memory.write32(0x0000, 0x40108000);                     // MOVI R1, 0x8000
+    memory.write32(0x0004, 0x00210000);                     // MOV R2, R1
+    memory.write32(0x0008, 0x80300100);                     // LOAD R3, [R0 + 0x100]
+    memory.write32(0x000C, 0x81100100);                     // STORE R1, [R0 + 0x100]
+    memory.write32(0x0010, 0x0A010000);                     // PUSH R1
+    memory.write32(0x0014, 0x0B400000);                     // POP R4
+    memory.write32(0x0018, 0x0F010000);                     // OUT R1
+    memory.write32(0x001C, 0x0D000000);                     // NOP
+    memory.write32(0x0020, 0x0E000000);                     // HLT
+
+    const int kept = kFlagZ | kFlagC;
+    cpu.state().setFlag(kFlagZ, true);
+    cpu.state().setFlag(kFlagC, true);
+
+    cpu.step();
+    check(cpu.state().flags() == kept, "MOVI keeps the flags");
+    cpu.step();
+    check(cpu.state().flags() == kept, "MOV keeps the flags");
+    cpu.step();
+    check(cpu.state().flags() == kept, "LOAD keeps the flags");
+    cpu.step();
+    check(cpu.state().flags() == kept, "STORE keeps the flags");
+    cpu.step();
+    check(cpu.state().flags() == kept, "PUSH keeps the flags");
+    cpu.step();
+    check(cpu.state().flags() == kept, "POP keeps the flags");
+    cpu.step();
+    check(cpu.state().flags() == kept, "OUT keeps the flags");
+    cpu.step();
+    check(cpu.state().flags() == kept, "NOP keeps the flags");
+    cpu.step();
+    check(cpu.state().flags() == kept, "HLT keeps the flags");
 }

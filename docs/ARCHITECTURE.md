@@ -14,6 +14,7 @@ flowchart LR
         CPUState
         Memory
         Decoder
+        ALU
     end
     main["coresim<br/>src/main.cpp"] --> lib
     tests["coresim_tests<br/>tests/"] --> lib
@@ -28,7 +29,8 @@ flowchart LR
 | `Decoder` | `Decoder.h` | Splits a 32-bit instruction into its fields → [DECODER.md](DECODER.md) |
 | `DecodedInstruction` | `DecodedInstruction.h` | Result of decoding (plain struct) |
 | `Opcode` | `Opcode.h` | Names and values of the 26 opcodes (`enum class`) → [ISA.md](ISA.md) |
-| `CPU` | `CPU.h` | Groups registers, state, decoder and memory; `step()` fetches, decodes and executes one instruction |
+| `ALU` | `ALU.h` | Calculates results and flags of the ALU instructions, see [ALU](#alu) |
+| `CPU` | `CPU.h` | Groups registers, state, decoder, ALU and memory; `step()` fetches, decodes and executes one instruction |
 
 ## Shared types
 
@@ -96,15 +98,28 @@ classDiagram
         address
         offset
     }
+    class ALU {
+        +execute(op, a, b) AluResult
+    }
+    class AluResult {
+        value
+        z
+        n
+        c
+        v
+        writesResult
+    }
 
     CPU *-- Register : owns
     CPU *-- CPUState : owns
     CPU *-- Decoder : owns
+    CPU *-- ALU : owns
     CPU --> Memory : references
     Decoder ..> DecodedInstruction : returns
+    ALU ..> AluResult : returns
 ```
 
-- **`CPU` owns** a `Register`, a `CPUState` and a `Decoder` as members. They are created and destroyed together with the CPU.
+- **`CPU` owns** a `Register`, a `CPUState`, a `Decoder` and an `ALU` as members. They are created and destroyed together with the CPU.
 - **`CPU` references** a `Memory`. The memory is created outside and passed into the constructor, so it must outlive the CPU:
 
   ```cpp
@@ -113,6 +128,7 @@ classDiagram
   ```
 
 - **`Decoder` has no state.** The CPU uses it in `step()`. It can also be used on its own (`Decoder().decode(instr)`). Its nested enum `Decoder::Format` (R, I, M, J) is selected from the top 2 opcode bits.
+- **`ALU` has no state.** The CPU uses it for every ALU instruction. It can also be used on its own (`ALU().execute(AluOp::ADD, a, b)`).
 
 `CPU::reset()` resets the registers and the CPU state and clears the halted state. It does **not** clear memory; use `Memory::reset()` for that.
 
@@ -137,7 +153,7 @@ flowchart LR
 | 4. Decode | `decoder_.decode(instruction)` |
 | 5. Execute | `switch` on `Opcode` |
 
-Only eight opcodes are executed so far. All others are decoded but do nothing:
+Only 14 opcodes are executed so far. All others are decoded but do nothing:
 
 | Opcode | Effect |
 |--------|--------|
@@ -148,9 +164,13 @@ Only eight opcodes are executed so far. All others are decoded but do nothing:
 | `ADD` (`0x01`) | `R[rd] = (R[rs1] + R[rs2]) & 0xFFFF`, updates Z, N, C, V |
 | `ADDI` (`0x41`) | `R[rd] = (R[rs1] + imm) & 0xFFFF`, updates Z, N, C, V |
 | `SUB` (`0x02`) | `R[rd] = (R[rs1] - R[rs2]) & 0xFFFF`, updates Z, N, C, V |
+| `MUL` (`0x03`) | `R[rd] = (R[rs1] * R[rs2]) & 0xFFFF`, updates Z, N, C, V |
+| `DIV` (`0x04`) | `R[rd] = R[rs1] / R[rs2]` (unsigned), updates Z, N, C, V, throws on division by zero |
+| `AND` (`0x05`) | `R[rd] = R[rs1] & R[rs2]`, updates Z, N, C, V |
+| `OR` (`0x06`) | `R[rd] = R[rs1] \| R[rs2]`, updates Z, N, C, V |
+| `XOR` (`0x07`) | `R[rd] = R[rs1] ^ R[rs2]`, updates Z, N, C, V |
+| `NOT` (`0x08`) | `R[rd] = ~R[rs1] & 0xFFFF`, updates Z, N, C, V |
 | `CMP` (`0x09`) | computes `R[rs1] - R[rs2]`, updates Z, N, C, V, stores no result |
-
-`ADD` and `ADDI` share the private helper `addWithFlags(a, b)`, `SUB` and `CMP` share `subWithFlags(a, b)`. Both compute the result, update the flags and return the result.
 
 ```cpp
 Memory memory;
@@ -165,6 +185,43 @@ cpu.step();   // nothing happens, PC stays 0x0008
 
 The full behaviour of every instruction is specified in [ISA.md](ISA.md).
 
+## ALU
+
+`ALU` (`include/coresim/ALU.h`, `src/ALU.cpp`) calculates the result and the flags of the ten ALU instructions. It only receives an operation and its operands, so it can be used and tested without a CPU.
+
+```cpp
+ALU alu;
+AluResult r = alu.execute(AluOp::ADD, 0xFFFF, 1);
+// r.value == 0, r.z == true, r.n == false, r.c == true, r.v == false, r.writesResult == true
+```
+
+| | `ALU` | `CPU` |
+|-|-------|-------|
+| Reads the operands | – | from the registers or the instruction (`ADDI`) |
+| Calculates the result and Z, N, C, V | ✅ | – |
+| Throws on division by zero | ✅ | passes the exception on |
+| Writes the result to `R[rd]` | – | if `writesResult` is set |
+| Updates FLAGS in `CPUState` | – | ✅ |
+
+`AluOp` is separate from `Opcode`: it only contains the ten ALU operations, so the ALU cannot be asked to run an instruction like `JMP`, and it does not depend on the instruction encoding. `CPU::step()` selects the `AluOp` for each opcode and calls the private helper `executeAlu()`:
+
+```mermaid
+sequenceDiagram
+    participant S as CPU::step()
+    participant H as CPU::executeAlu()
+    participant A as ALU
+    S->>H: AluOp, decoded fields, b
+    H->>A: execute(op, R[rs1], b)
+    A-->>H: AluResult
+    H->>H: R[rd] = value (if writesResult)
+    H->>H: set Z, N, C, V in CPUState
+```
+
+- **`b`** is `R[rs2]` for R-format instructions and the immediate for `ADDI`. `NOT` has only one operand and ignores `b`.
+- **`CMP`** returns the difference in `value` so that it works like `SUB`, but `writesResult` is `false`, so the CPU writes no register.
+- **Division by zero:** the ALU throws before the CPU writes anything, so `R[rd]` and the flags stay unchanged. The PC has already been advanced.
+- **Other instructions** do not use the ALU and leave the flags unchanged.
+
 ## Error handling
 
 Invalid accesses throw `std::out_of_range`:
@@ -173,6 +230,8 @@ Invalid accesses throw `std::out_of_range`:
 |-------|-----------|
 | `Memory` | Any byte of the access lies outside `0x00000`–`0x3FFFF` |
 | `Register` | Register index ≥ 16 |
+
+`ALU::execute()` throws `std::runtime_error` on `DIV` by zero. `CPU::step()` does not catch it.
 
 `CPUState` setters never throw. They mask values to the register's bit width instead (see [REGISTERS.md](REGISTERS.md)).
 

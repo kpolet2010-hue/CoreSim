@@ -1,5 +1,6 @@
 #pragma once
 
+#include "coresim/ALU.h"
 #include "coresim/CPUState.h"
 #include "coresim/Memory.h"
 #include "coresim/Register.h"
@@ -28,9 +29,9 @@ namespace coresim {
             Register registers_;
             CPUState state_;
             Decoder decoder_;
+            ALU alu_;
             bool halted_ = false;
-            Word addWithFlags(Word a, Word b);
-            Word subWithFlags(Word a, Word b);
+            void executeAlu(AluOp op, const DecodedInstruction& decoded, Word b = 0);
     };
 
 } // namespace coresim

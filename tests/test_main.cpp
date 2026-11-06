@@ -1,3 +1,4 @@
+#include "test_alu.h"
 #include "test_cpu.h"
 #include "test_memory.h"
 #include "test_register.h"
@@ -12,6 +13,7 @@ int main() {
     // run all tests
     failures += MemoryTests().run();
     failures += RegisterTests().run();
+    failures += AluTests().run();
     failures += CpuTests().run();
     failures += CpuStateTests().run();
     failures += DecoderTests().run();
