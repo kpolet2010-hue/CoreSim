@@ -30,6 +30,7 @@ namespace coresim {
             Decoder decoder_;
             bool halted_ = false;
             Word addWithFlags(Word a, Word b);
+            Word subWithFlags(Word a, Word b);
     };
 
 } // namespace coresim

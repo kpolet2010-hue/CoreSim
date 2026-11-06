@@ -108,4 +108,4 @@ stateDiagram-v2
     Set --> Cleared : reset()
 ```
 
-`ADD` and `ADDI` update the flags when they are executed (see [ISA.md](ISA.md#flags)). No other instruction changes them yet.
+`ADD`, `ADDI`, `SUB` and `CMP` update the flags when they are executed (see [ISA.md](ISA.md#flags)). No other instruction changes them yet.
