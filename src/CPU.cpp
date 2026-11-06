@@ -1,6 +1,8 @@
 #include "coresim/CPU.h"
 #include "coresim/Opcode.h"
 
+#include <cstdint>
+
 namespace coresim {
 
     CPU::CPU(Memory& memory) : memory_(memory) {}
@@ -35,7 +37,15 @@ namespace coresim {
         case Opcode::MOVI:
             registers_.set(decoded.rd, decoded.immediate);
             break;
+        case Opcode::ADD: {
+            Word a = registers_.get(decoded.rs1);
+            Word b = registers_.get(decoded.rs2);
+            std::uint32_t sum = a + b;
+            Word result = sum & 0xFFFF;
             
+            registers_.set(decoded.rd, result);
+            break;
+        }
         default:
             break;
         }
