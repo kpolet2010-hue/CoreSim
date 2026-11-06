@@ -133,4 +133,41 @@ void CpuTests::runTests() {
     check(!cpu.state().flag(kFlagN), "ADD: 0x8000 + 0x8000 clears N");
     check(cpu.state().flag(kFlagC), "ADD: 0x8000 + 0x8000 sets C");
     check(cpu.state().flag(kFlagV), "ADD: 0x8000 + 0x8000 sets V");
+
+    // ADDI adds the immediate and keeps the source register
+    cpu.reset();
+    memory.write32(0x0000, 0x40100005);                     // MOVI R1, 5
+    memory.write32(0x0004, 0x41210007);                     // ADDI R2, R1, 7
+
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(2) == 12, "ADDI: R2 = 5 + 7 = 12");
+    check(cpu.registers().get(1) == 5, "ADDI: R1 unchanged");
+    check(cpu.state().flags() == 0, "ADDI: 5 + 7 sets no flags");
+
+    // ADDI: destination equals source, 0xFFFF acts as -1, result wraps to 0
+    cpu.reset();
+    memory.write32(0x0000, 0x40100001);                     // MOVI R1, 1
+    memory.write32(0x0004, 0x4111FFFF);                     // ADDI R1, R1, 0xFFFF
+
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(1) == 0, "ADDI: 1 + 0xFFFF wraps to 0");
+    check(cpu.state().flag(kFlagZ), "ADDI: 1 + 0xFFFF sets Z");
+    check(!cpu.state().flag(kFlagN), "ADDI: 1 + 0xFFFF clears N");
+    check(cpu.state().flag(kFlagC), "ADDI: 1 + 0xFFFF sets C");
+    check(!cpu.state().flag(kFlagV), "ADDI: 1 + 0xFFFF clears V");
+
+    // ADDI: signed overflow sets N and V
+    cpu.reset();
+    memory.write32(0x0000, 0x40107FFF);                     // MOVI R1, 0x7FFF
+    memory.write32(0x0004, 0x41210001);                     // ADDI R2, R1, 1
+
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(2) == 0x8000, "ADDI: 0x7FFF + 1 = 0x8000");
+    check(!cpu.state().flag(kFlagZ), "ADDI: 0x7FFF + 1 clears Z");
+    check(cpu.state().flag(kFlagN), "ADDI: 0x7FFF + 1 sets N");
+    check(!cpu.state().flag(kFlagC), "ADDI: 0x7FFF + 1 clears C");
+    check(cpu.state().flag(kFlagV), "ADDI: 0x7FFF + 1 sets V");
 }
