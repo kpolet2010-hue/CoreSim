@@ -42,7 +42,7 @@ namespace coresim {
             Word b = registers_.get(decoded.rs2);
             std::uint32_t sum = a + b;
             Word result = sum & 0xFFFF;
-            
+            state_.setFlag(kFlagZ, result == 0);
             registers_.set(decoded.rd, result);
             break;
         }
