@@ -39,6 +39,16 @@ class TestSuite {
             return false;
         }
 
+        template <typename Func>
+        static bool throwsRuntimeError(Func func) {
+            try {
+                func();
+            } catch (const std::runtime_error&) {
+                return true;
+            }
+            return false;
+        }
+
     private:
         const char* name_;
         int failures_ = 0;

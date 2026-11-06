@@ -25,9 +25,10 @@ CoreSim is an emulator for a custom 16-bit CPU (**CoreSim-16**), written in C++1
 | Special registers (`CPUState`) | ✅ PC, SP, IR, DBR, FLAGS with bit-width masking | [REGISTERS.md](docs/REGISTERS.md) |
 | Instruction decoder (`Decoder`) | ✅ R, I, M and J format, selected by the top 2 opcode bits | [DECODER.md](docs/DECODER.md) |
 | Instruction set (`Opcode`) | ✅ 26 opcodes with values in their format ranges | [ISA.md](docs/ISA.md) |
-| CPU (`CPU`) | ✅ Owns registers, state and decoder, references memory, `reset()`, `step()` (fetch, decode, `NOP`, `HLT`, `MOV`, `MOVI`, `ADD`, `ADDI`, `SUB`, `CMP`) | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| ALU (`ALU`) | ✅ `ADD`, `ADDI`, `SUB`, `MUL`, `DIV`, `CMP`, `AND`, `OR`, `XOR`, `NOT` with Z, N, C, V, independent of the CPU | [ARCHITECTURE.md](docs/ARCHITECTURE.md#alu) |
+| CPU (`CPU`) | ✅ Owns registers, state, decoder and ALU, references memory, `reset()`, `step()` (fetch, decode, `NOP`, `HLT`, `MOV`, `MOVI`, ALU instructions) | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 
-`CPU::step()` fetches and decodes one instruction, but only `NOP`, `HLT`, `MOV`, `MOVI`, `ADD`, `ADDI`, `SUB` and `CMP` are executed so far. The behaviour of all other opcodes is specified in [ISA.md](docs/ISA.md), but not implemented yet.
+`CPU::step()` fetches and decodes one instruction, but only `NOP`, `HLT`, `MOV`, `MOVI` and the ALU instructions are executed so far. The behaviour of all other opcodes is specified in [ISA.md](docs/ISA.md), but not implemented yet.
 
 ## Building
 
@@ -58,7 +59,7 @@ See [TESTING.md](docs/TESTING.md) for the test structure and CI.
 ## Project layout
 
 ```
-include/coresim/   public headers (Architecture, CPU, CPUState, Memory, Register, Decoder, DecodedInstruction, Opcode)
+include/coresim/   public headers (ALU, Architecture, CPU, CPUState, Memory, Register, Decoder, DecodedInstruction, Opcode)
 src/               implementation + main.cpp
 tests/             test suites (TestSuite base class, one suite per component)
 docs/              architecture documentation (Markdown + Mermaid)
@@ -69,7 +70,7 @@ examples/          example programs (none yet)
 
 ## Documentation
 
-- [ARCHITECTURE.md](docs/ARCHITECTURE.md) – components, ownership and data flow
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) – components, ownership, data flow and the ALU
 - [MEMORY.md](docs/MEMORY.md) – RAM, little-endian layout, bounds checking
 - [REGISTERS.md](docs/REGISTERS.md) – R0–R15 and the special registers
 - [DECODER.md](docs/DECODER.md) – 32-bit instruction format and decoding

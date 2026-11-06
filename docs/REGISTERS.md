@@ -108,4 +108,4 @@ stateDiagram-v2
     Set --> Cleared : reset()
 ```
 
-`ADD`, `ADDI`, `SUB` and `CMP` update the flags when they are executed (see [ISA.md](ISA.md#flags)). No other instruction changes them yet.
+The ALU instructions (`ADD`, `ADDI`, `SUB`, `MUL`, `DIV`, `CMP`, `AND`, `OR`, `XOR`, `NOT`) update the flags when they are executed (see [ISA.md](ISA.md#flags)). No other instruction changes them.

@@ -15,10 +15,10 @@ The sections [Operands](#operands) to [Stack operations](#stack-operations) spec
 | Fetch: `IR = read32(PC)`, `PC = PC + 4` | ✅ `CPU::step()` |
 | Decode | ✅ `CPU::step()` uses `Decoder` |
 | Halted state | ✅ `CPU::halted()`, cleared by `reset()` |
-| `NOP`, `HLT`, `MOV`, `MOVI`, `ADD`, `ADDI`, `SUB`, `CMP` | ✅ executed |
-| Flag updates of `ADD`, `ADDI` | ✅ `CPU::addWithFlags()` |
-| Flag updates of `SUB`, `CMP` | ✅ `CPU::subWithFlags()` |
-| All other 18 opcodes | ❌ decoded, but `step()` does nothing |
+| `NOP`, `HLT`, `MOV`, `MOVI` | ✅ executed |
+| `ADD`, `ADDI`, `SUB`, `MUL`, `DIV`, `CMP`, `AND`, `OR`, `XOR`, `NOT` | ✅ executed, calculated by `ALU` |
+| Flag updates of the ALU instructions | ✅ calculated by `ALU::execute()`, stored by `CPU::step()` |
+| All other 12 opcodes | ❌ decoded, but `step()` does nothing |
 | `Memory::read16()`/`write16()`, `OUT` stream | ❌ not implemented |
 
 ## Opcode space
@@ -127,7 +127,7 @@ Rule of thumb: `rd` is written, `rs1` and `rs2` are read. The only exception is 
 
 ## Semantics
 
-> **ISA specification, partly implemented.** This section defines the observable effect on the registers. `MOV`, `MOVI`, `ADD`, `ADDI`, `SUB`, `CMP`, `NOP` and `HLT` are implemented in `CPU::step()`. Flags, the PC, memory accesses and the stack are specified separately.
+> **ISA specification, partly implemented.** This section defines the observable effect on the registers. `MOV`, `MOVI`, `NOP` and `HLT` are implemented in `CPU::step()`, `ADD`, `ADDI`, `SUB`, `MUL`, `DIV`, `AND`, `OR`, `XOR`, `NOT` and `CMP` in `ALU::execute()` (see [ARCHITECTURE.md](ARCHITECTURE.md#alu)). `OUT` is not implemented yet. Flags, the PC, memory accesses and the stack are specified separately.
 
 `R[x]` is the value of register `x`. All registers are 16 bit wide, so every result is truncated to 16 bits (`& 0xFFFF`).
 
@@ -174,7 +174,7 @@ Implemented: `CPU::halted()` returns the state.
 
 ## Flags
 
-> **ISA specification, partly implemented.** This section defines how instructions update the FLAGS register (see [REGISTERS.md](REGISTERS.md#flags)). `ADD` and `ADDI` update the flags through `CPU::addWithFlags()`, `SUB` and `CMP` through `CPU::subWithFlags()`, and `MOV`, `MOVI`, `NOP` and `HLT` leave them unchanged. The other ALU instructions are not implemented yet.
+> **ISA specification, implemented for all ALU instructions.** This section defines how instructions update the FLAGS register (see [REGISTERS.md](REGISTERS.md#flags)). `ALU::execute()` calculates the flags and `CPU::step()` stores them. All other instructions leave them unchanged.
 
 | Flag | Set when … | Meaning |
 |------|------------|---------|
@@ -230,7 +230,7 @@ All ALU instructions update **all four** flags. All other instructions leave the
 
 ## Execution cycle and jumps
 
-> **ISA specification, partly implemented.** Steps 1–4 below are implemented in `CPU::step()`, step 5 for `NOP`, `HLT`, `MOV`, `MOVI`, `ADD`, `ADDI`, `SUB` and `CMP`. Jumps are not implemented yet.
+> **ISA specification, partly implemented.** Steps 1–4 below are implemented in `CPU::step()`, step 5 for `NOP`, `HLT`, `MOV`, `MOVI` and the ALU instructions. Jumps are not implemented yet.
 
 ### One step
 
@@ -465,4 +465,6 @@ DecodedInstruction d = Decoder().decode(instr);
 - the value of all 26 opcodes and that each one lies in the range of its format,
 - the operand encoding of the conventions above, by decoding sample instructions: `STORE` (value register in the `rd` field), `LOAD`, `PUSH` (`rs1`), `POP` (`rd`), `MOVI`, `CALL` (absolute address) and `HLT` (unused fields are 0).
 
-`tests/test_cpu.cpp` (suite `CPU`) checks the implemented part of `step()`: fetch into IR, PC + 4, `NOP`, `HLT`, `MOV`, `MOVI`, `ADD`, `ADDI`, `SUB` and `CMP` with their flags, the halted state and `reset()`. The remaining behaviour will be tested together with its implementation. See [TESTING.md](TESTING.md).
+`tests/test_alu.cpp` (suite `ALU`) checks the result and all four flags of every ALU operation without a CPU.
+
+`tests/test_cpu.cpp` (suite `CPU`) checks the implemented part of `step()`: fetch into IR, PC + 4, `NOP`, `HLT`, `MOV`, `MOVI`, the ALU instructions with their flags, the halted state and `reset()`. The remaining behaviour will be tested together with its implementation. See [TESTING.md](TESTING.md).

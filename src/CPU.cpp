@@ -1,6 +1,5 @@
 #include "coresim/CPU.h"
 #include "coresim/Opcode.h"
-#include <cstdint>
 
 namespace coresim {
 
@@ -36,55 +35,52 @@ namespace coresim {
         case Opcode::MOVI:
             registers_.set(decoded.rd, decoded.immediate);
             break;
-        case Opcode::ADD: {
-            Word a = registers_.get(decoded.rs1);
-            Word b = registers_.get(decoded.rs2);
-            Word result = addWithFlags(a, b);
-            registers_.set(decoded.rd, result);
+        case Opcode::ADD:
+            executeAlu(AluOp::ADD, decoded, registers_.get(decoded.rs2));
             break;
-        }
-        case Opcode::ADDI: {
-            Word a = registers_.get(decoded.rs1);
-            Word b = decoded.immediate;
-            Word result = addWithFlags(a, b);
-            registers_.set(decoded.rd, result);
+        case Opcode::ADDI:
+            executeAlu(AluOp::ADDI, decoded, decoded.immediate);
             break;
-        }
-        case Opcode::SUB: {
-            Word a = registers_.get(decoded.rs1);
-            Word b = registers_.get(decoded.rs2);
-            Word result = subWithFlags(a, b);
-            registers_.set(decoded.rd, result);
+        case Opcode::SUB:
+            executeAlu(AluOp::SUB, decoded, registers_.get(decoded.rs2));
             break;
-        }
-        case Opcode::CMP: {
-            Word a = registers_.get(decoded.rs1);
-            Word b = registers_.get(decoded.rs2);
-            subWithFlags(a, b);
+        case Opcode::MUL:
+            executeAlu(AluOp::MUL, decoded, registers_.get(decoded.rs2));
             break;
-        }
+        case Opcode::DIV:
+            executeAlu(AluOp::DIV, decoded, registers_.get(decoded.rs2));
+            break;
+        case Opcode::CMP:
+            executeAlu(AluOp::CMP, decoded, registers_.get(decoded.rs2));
+            break;
+        case Opcode::AND:
+            executeAlu(AluOp::AND, decoded, registers_.get(decoded.rs2));
+            break;
+        case Opcode::OR:
+            executeAlu(AluOp::OR, decoded, registers_.get(decoded.rs2));
+            break;
+        case Opcode::XOR:
+            executeAlu(AluOp::XOR, decoded, registers_.get(decoded.rs2));
+            break;
+        case Opcode::NOT:
+            executeAlu(AluOp::NOT, decoded);
+            break;
         default:
             break;
         }
     }
 
-    Word CPU::addWithFlags(Word a, Word b) {
-        Word result = (a + b) & 0xFFFF;
-        std::uint32_t sum = a + b;
-        state_.setFlag(kFlagZ, result == 0);
-        state_.setFlag(kFlagN, (result >> 15) & 1);
-        state_.setFlag(kFlagC, sum > 0xFFFF);
-        state_.setFlag(kFlagV, ((a ^ result) & (b ^ result) & 0x8000) != 0);
-        return result;
-    }
+    void CPU::executeAlu(AluOp op, const DecodedInstruction& decoded, Word b) {
+        // if the alu throws, registers and flags stay unchanged
+        AluResult result = alu_.execute(op, registers_.get(decoded.rs1), b);
 
-    Word CPU::subWithFlags(Word a, Word b) {
-        Word result = (a - b) & 0xFFFF;
-        state_.setFlag(kFlagZ, result == 0);
-        state_.setFlag(kFlagN, (result >> 15) & 1);
-        state_.setFlag(kFlagC, a < b);
-        state_.setFlag(kFlagV, ((a ^ b) & (a ^ result) & 0x8000) != 0);
-        return result;
+        if (result.writesResult) {
+            registers_.set(decoded.rd, result.value);
+        }
+        state_.setFlag(kFlagZ, result.z);
+        state_.setFlag(kFlagN, result.n);
+        state_.setFlag(kFlagC, result.c);
+        state_.setFlag(kFlagV, result.v);
     }
 
 } // namespace coresim

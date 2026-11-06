@@ -1,5 +1,6 @@
 add_executable(coresim_tests
     test_main.cpp
+    test_alu.cpp
     test_memory.cpp
     test_cpu.cpp
     test_register.cpp
