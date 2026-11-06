@@ -43,6 +43,9 @@ namespace coresim {
             std::uint32_t sum = a + b;
             Word result = sum & 0xFFFF;
             state_.setFlag(kFlagZ, result == 0);
+            state_.setFlag(kFlagN, (result >> 15) & 1);
+            state_.setFlag(kFlagC, sum > 0xFFFF);
+            state_.setFlag(kFlagV, ((a ^ result) & (b ^ result) & 0x8000) != 0);
             registers_.set(decoded.rd, result);
             break;
         }
