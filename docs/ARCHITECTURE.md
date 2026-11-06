@@ -28,7 +28,7 @@ flowchart LR
 | `Decoder` | `Decoder.h` | Splits a 32-bit instruction into its fields → [DECODER.md](DECODER.md) |
 | `DecodedInstruction` | `DecodedInstruction.h` | Result of decoding (plain struct) |
 | `Opcode` | `Opcode.h` | Names and values of the 26 opcodes (`enum class`) → [ISA.md](ISA.md) |
-| `CPU` | `CPU.h` | Groups registers, state and memory into one object |
+| `CPU` | `CPU.h` | Groups registers, state, decoder and memory; `step()` fetches, decodes and executes one instruction |
 
 ## Shared types
 
@@ -51,7 +51,9 @@ Defined in `include/coresim/Architecture.h`:
 classDiagram
     class CPU {
         +CPU(Memory& memory)
+        +step()
         +reset()
+        +halted() bool
         +memory() Memory&
         +registers() Register&
         +state() CPUState&
@@ -97,11 +99,12 @@ classDiagram
 
     CPU *-- Register : owns
     CPU *-- CPUState : owns
+    CPU *-- Decoder : owns
     CPU --> Memory : references
     Decoder ..> DecodedInstruction : returns
 ```
 
-- **`CPU` owns** a `Register` and a `CPUState` as members. They are created and destroyed together with the CPU.
+- **`CPU` owns** a `Register`, a `CPUState` and a `Decoder` as members. They are created and destroyed together with the CPU.
 - **`CPU` references** a `Memory`. The memory is created outside and passed into the constructor, so it must outlive the CPU:
 
   ```cpp
@@ -109,34 +112,52 @@ classDiagram
   CPU cpu(memory);
   ```
 
-- **`Decoder` is stand-alone.** It is not part of the CPU and has no state. Its nested enum `Decoder::Format` (R, I, M, J) is selected from the top 2 opcode bits.
+- **`Decoder` has no state.** The CPU uses it in `step()`. It can also be used on its own (`Decoder().decode(instr)`). Its nested enum `Decoder::Format` (R, I, M, J) is selected from the top 2 opcode bits.
 
-`CPU::reset()` resets the registers and the CPU state. It does **not** clear memory; use `Memory::reset()` for that.
+`CPU::reset()` resets the registers and the CPU state and clears the halted state. It does **not** clear memory; use `Memory::reset()` for that.
 
 ## Data flow
 
-The CPU does not fetch, decode or execute instructions on its own yet. The flow from RAM to decoded fields is currently done by calling the classes directly:
+`CPU::step()` runs one instruction:
 
 ```mermaid
 flowchart LR
-    M["Memory<br/>(instruction stored little-endian)"]
-    I["Instruction<br/>0x12345678"]
-    D["Decoder"]
-    R["DecodedInstruction<br/>opcode = 0x12<br/>rd = 3, rs1 = 4, rs2 = 5"]
-
-    M -- "read32(address)" --> I
-    I -- "decode(instr)" --> D
-    D -- returns --> R
+    H{"halted?"} -- no --> M["Memory<br/>read32(PC)"]
+    H -- yes --> X["nothing happens"]
+    M --> IR["IR = instruction<br/>PC = PC + 4"]
+    IR --> D["Decoder<br/>decode(IR)"]
+    D --> E["execute by opcode"]
 ```
+
+| Step | Code |
+|------|------|
+| 1. Stop if halted | `if (halted_) return;` |
+| 2. Fetch into IR | `state_.setIr(memory_.read32(state_.pc()))` |
+| 3. Advance PC | `state_.setPc(state_.pc() + 4)` |
+| 4. Decode | `decoder_.decode(instruction)` |
+| 5. Execute | `switch` on `Opcode` |
+
+Only four opcodes are executed so far. All others are decoded but do nothing:
+
+| Opcode | Effect |
+|--------|--------|
+| `NOP` (`0x0D`) | nothing |
+| `HLT` (`0x0E`) | sets the halted state, further `step()` calls do nothing until `reset()` |
+| `MOV` (`0x00`) | `R[rd] = R[rs1]` |
+| `MOVI` (`0x40`) | `R[rd] = imm` |
 
 ```cpp
 Memory memory;
-memory.write32(0x100, 0x12345678);
+memory.write32(0x0000, 0x0D000000);   // NOP
+memory.write32(0x0004, 0x0E000000);   // HLT
 
-Instruction instr = memory.read32(0x100);
-DecodedInstruction d = Decoder().decode(instr);
-// d.opcode == 0x12, d.rd == 3, d.rs1 == 4, d.rs2 == 5
+CPU cpu(memory);
+cpu.step();   // IR = 0x0D000000, PC = 0x0004
+cpu.step();   // IR = 0x0E000000, PC = 0x0008, cpu.halted() == true
+cpu.step();   // nothing happens, PC stays 0x0008
 ```
+
+The full behaviour of every instruction is specified in [ISA.md](ISA.md).
 
 ## Error handling
 

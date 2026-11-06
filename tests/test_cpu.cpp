@@ -18,5 +18,54 @@ void CpuTests::runTests() {
     cpu.reset();
     check(cpu.state().pc() == 0, "CPU reset clears state");
 
+    // step: fetch the instrcution at pc, sstore it in ir, advance pc by 4
+    cpu.reset();
+    memory.write32(0x0000, 0x12345678);
+    memory.write32(0x0004, 0xCAFEBABE);
 
+    cpu.step();
+    check(cpu.state().ir() == 0x12345678, "step: IR holds the first instruction");
+    check(cpu.state().pc() == 0x0004, "step: PC advances to 0x0004");
+
+    cpu.step();
+    check(cpu.state().ir() == 0xCAFEBABE, "step: IR holds the second instruction");
+    check(cpu.state().pc() == 0x0008, "step: PC advances to 0x0008");   
+
+    // NOP does nothing, HLT stops the cpu until reset
+    cpu.reset();
+    memory.write32(0x0000, 0x0D000000);                     // NOP
+    memory.write32(0x0004, 0x0E000000);                     // HLT
+    memory.write32(0x0008, 0x0D000000);                     // NOP, never reached
+
+    cpu.step();
+    check(!cpu.halted(), "NOP: cpu keeps running");
+    check(cpu.state().pc() == 0x0004, "NOP: PC advances to 0x0004");
+
+    cpu.step();
+    check(cpu.halted(), "HLT: cpu is halted");
+    check(cpu.state().pc() == 0x0008, "HLT: PC advances to 0x0008");
+
+    cpu.step();
+    check(cpu.state().pc() == 0x0008, "halted: step does not fetch, PC stays 0x0008");
+
+    cpu.reset();
+    check(!cpu.halted(), "reset clears halted");
+
+    // MOVI loads an immediate, MOV copies a register, neither changes the flags
+    cpu.reset();
+    memory.write32(0x0000, 0x40101234);                     // MOVI R1, 0x1234
+    memory.write32(0x0004, 0x00210000);                     // MOV  R2, R1
+    memory.write32(0x0008, 0x0E000000);                     // HLT
+
+    cpu.step();
+    check(cpu.registers().get(1) == 0x1234, "MOVI: R1 = 0x1234");
+    check(cpu.state().flags() == 0, "MOVI: flags unchanged");
+
+    cpu.step();
+    check(cpu.registers().get(2) == 0x1234, "MOV: R2 = 0x1234");
+    check(cpu.registers().get(1) == 0x1234, "MOV: R1 still 0x1234 (copy, not move)");
+    check(cpu.state().flags() == 0, "MOV: flags unchanged");
+
+    cpu.step();
+    check(cpu.halted(), "MOV program: cpu halts at HLT");
 }

@@ -6,7 +6,18 @@
 enum class Opcode : std::uint8_t { MOV = 0x00, ADD = 0x01, /* ... */ JC = 0xC4 };
 ```
 
-In code, an opcode only has a **name**, a **value** and a **format**. The decoder does not use the enum, and the CPU does not execute any instruction yet. The sections [Operands](#operands) to [Stack operations](#stack-operations) specify how each instruction will behave.
+The sections [Operands](#operands) to [Stack operations](#stack-operations) specify how each instruction behaves. Only a small part of it is implemented so far.
+
+## Implementation status
+
+| Part | Status |
+|------|--------|
+| Fetch: `IR = read32(PC)`, `PC = PC + 4` | ✅ `CPU::step()` |
+| Decode | ✅ `CPU::step()` uses `Decoder` |
+| Halted state | ✅ `CPU::halted()`, cleared by `reset()` |
+| `NOP`, `HLT`, `MOV`, `MOVI` | ✅ executed |
+| All other 22 opcodes | ❌ decoded, but `step()` does nothing |
+| Flags, `Memory::read16()`/`write16()`, `OUT` stream | ❌ not implemented |
 
 ## Opcode space
 
@@ -67,7 +78,7 @@ Every value is written out explicitly. An `enum` would otherwise count up from t
 
 ## Operands
 
-> **ISA specification, not implemented yet.** This section defines which fields each instruction uses. The CPU does not execute instructions yet.
+> **ISA specification.** This section defines which fields each instruction uses. See [Implementation status](#implementation-status) for what is executed today.
 
 Rule of thumb: `rd` is written, `rs1` and `rs2` are read. The only exception is `STORE` (see below).
 
@@ -114,7 +125,7 @@ Rule of thumb: `rd` is written, `rs1` and `rs2` are read. The only exception is 
 
 ## Semantics
 
-> **ISA specification, not implemented yet.** This section defines the observable effect on the registers. Flags, the PC, memory accesses and the stack are specified separately.
+> **ISA specification, partly implemented.** This section defines the observable effect on the registers. `MOV`, `MOVI`, `NOP` and `HLT` are implemented in `CPU::step()`. Flags, the PC, memory accesses and the stack are specified separately.
 
 `R[x]` is the value of register `x`. All registers are 16 bit wide, so every result is truncated to 16 bits (`& 0xFFFF`).
 
@@ -152,6 +163,8 @@ For `ADD`, `ADDI`, `SUB` and `MUL`, signed and unsigned interpretation give the 
 - The CPU writes to a `std::ostream&`, so tests can capture the output (e.g. with `std::ostringstream`).
 
 ### `HLT`
+
+Implemented: `CPU::halted()` returns the state.
 
 - After `HLT`, the CPU is in the state **halted**.
 - While halted, further `step()` calls do not execute any instruction.
@@ -215,7 +228,7 @@ All ALU instructions update **all four** flags. All other instructions leave the
 
 ## Execution cycle and jumps
 
-> **ISA specification, not implemented yet.** This section defines one CPU step and how jumps change the PC.
+> **ISA specification, partly implemented.** Steps 1–4 below are implemented in `CPU::step()`, step 5 for `NOP`, `HLT`, `MOV` and `MOVI`. Jumps are not implemented yet.
 
 ### One step
 
@@ -450,4 +463,4 @@ DecodedInstruction d = Decoder().decode(instr);
 - the value of all 26 opcodes and that each one lies in the range of its format,
 - the operand encoding of the conventions above, by decoding sample instructions: `STORE` (value register in the `rd` field), `LOAD`, `PUSH` (`rs1`), `POP` (`rd`), `MOVI`, `CALL` (absolute address) and `HLT` (unused fields are 0).
 
-The behaviour (semantics, flags, PC, memory, stack) cannot be tested yet, because the CPU does not execute instructions. See [TESTING.md](TESTING.md).
+`tests/test_cpu.cpp` (suite `CPU`) checks the implemented part of `step()`: fetch into IR, PC + 4, `NOP`, `HLT`, `MOV`, `MOVI`, the halted state and `reset()`. The remaining behaviour will be tested together with its implementation. See [TESTING.md](TESTING.md).

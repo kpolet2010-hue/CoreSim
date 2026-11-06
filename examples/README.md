@@ -1,6 +1,6 @@
 # Examples
 
-There are no example programs yet. The CPU cannot execute instructions so far, and no opcodes have a meaning.
+There are no example programs yet. The CPU only executes `NOP`, `HLT`, `MOV` and `MOVI` so far.
 
 What can be tried today:
 

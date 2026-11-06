@@ -3,6 +3,7 @@
 #include "coresim/CPUState.h"
 #include "coresim/Memory.h"
 #include "coresim/Register.h"
+#include "coresim/Decoder.h"
 
 namespace coresim {
 
@@ -12,7 +13,8 @@ namespace coresim {
             explicit CPU(Memory& memory);
 
             void reset();
-
+            void step();
+            bool halted() const { return halted_; }
             Memory& memory() { return memory_; }
 
             Register& registers() { return registers_; }
@@ -25,6 +27,8 @@ namespace coresim {
             Memory& memory_;
             Register registers_;
             CPUState state_;
+            Decoder decoder_;
+            bool halted_ = false;
     };
 
 } // namespace coresim

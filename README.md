@@ -25,9 +25,9 @@ CoreSim is an emulator for a custom 16-bit CPU (**CoreSim-16**), written in C++1
 | Special registers (`CPUState`) | ✅ PC, SP, IR, DBR, FLAGS with bit-width masking | [REGISTERS.md](docs/REGISTERS.md) |
 | Instruction decoder (`Decoder`) | ✅ R, I, M and J format, selected by the top 2 opcode bits | [DECODER.md](docs/DECODER.md) |
 | Instruction set (`Opcode`) | ✅ 26 opcodes with values in their format ranges | [ISA.md](docs/ISA.md) |
-| CPU (`CPU`) | ✅ Owns registers + state, references memory, `reset()` | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| CPU (`CPU`) | ✅ Owns registers, state and decoder, references memory, `reset()`, `step()` (fetch, decode, `NOP`, `HLT`, `MOV`, `MOVI`) | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 
-The CPU does not fetch or execute instructions yet. The opcodes are named, but none of them has any behaviour.
+`CPU::step()` fetches and decodes one instruction, but only `NOP`, `HLT`, `MOV` and `MOVI` are executed so far. The behaviour of all other opcodes is specified in [ISA.md](docs/ISA.md), but not implemented yet.
 
 ## Building
 
