@@ -108,4 +108,4 @@ stateDiagram-v2
     Set --> Cleared : reset()
 ```
 
-The flags are currently only changed through these methods. No instruction sets them yet.
+`ADD` and `ADDI` update the flags when they are executed (see [ISA.md](ISA.md#flags)). No other instruction changes them yet.
