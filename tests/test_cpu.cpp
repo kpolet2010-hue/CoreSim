@@ -88,4 +88,14 @@ void CpuTests::runTests() {
     check(cpu.registers().get(1) == 5, "ADD: R1 unchanged");
     check(cpu.registers().get(2) == 7, "ADD: R2 unchanged");
 
+    // ADD wraps around at 16 bits
+    cpu.reset();
+    memory.write32(0x0000, 0x4010FFFF);                     // MOVI R1, 0xFFFF
+    memory.write32(0x0004, 0x40200001);                     // MOVI R2, 1
+    memory.write32(0x0008, 0x01312000);                     // ADD R3, R1, R2
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(3) == 0, "ADD: 0xFFFF + 1 wraps to 0");
 }
