@@ -236,4 +236,62 @@ void CpuTests::runTests() {
     cpu.step();
     check(cpu.registers().get(1) == 2, "SUB: R1 = 5 - 3 = 2 (rd equals rs1)");
     check(cpu.registers().get(2) == 3, "SUB: R2 unchanged (rd equals rs1)");
+
+    // CMP: equal operands set Z, no register is written
+    cpu.reset();
+    memory.write32(0x0000, 0x40001234);                     // MOVI R0, 0x1234
+    memory.write32(0x0004, 0x40100005);                     // MOVI R1, 5
+    memory.write32(0x0008, 0x40200005);                     // MOVI R2, 5
+    memory.write32(0x000C, 0x09012000);                     // CMP R1, R2
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(0) == 0x1234, "CMP: R0 unchanged (unused rd field)");
+    check(cpu.registers().get(1) == 5, "CMP: R1 unchanged");
+    check(cpu.registers().get(2) == 5, "CMP: R2 unchanged");
+    check(cpu.state().flag(kFlagZ), "CMP: 5, 5 sets Z");
+    check(!cpu.state().flag(kFlagN), "CMP: 5, 5 clears N");
+    check(!cpu.state().flag(kFlagC), "CMP: 5, 5 clears C");
+    check(!cpu.state().flag(kFlagV), "CMP: 5, 5 clears V");
+
+    // CMP: a < b sets N and C
+    cpu.reset();
+    memory.write32(0x0000, 0x40100003);                     // MOVI R1, 3
+    memory.write32(0x0004, 0x40200005);                     // MOVI R2, 5
+    memory.write32(0x0008, 0x09012000);                     // CMP R1, R2
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(!cpu.state().flag(kFlagZ), "CMP: 3, 5 clears Z");
+    check(cpu.state().flag(kFlagN), "CMP: 3, 5 sets N");
+    check(cpu.state().flag(kFlagC), "CMP: 3, 5 sets C");
+    check(!cpu.state().flag(kFlagV), "CMP: 3, 5 clears V");
+
+    // CMP: a > b sets no flags
+    cpu.reset();
+    memory.write32(0x0000, 0x40100005);                     // MOVI R1, 5
+    memory.write32(0x0004, 0x40200003);                     // MOVI R2, 3
+    memory.write32(0x0008, 0x09012000);                     // CMP R1, R2
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.state().flags() == 0, "CMP: 5, 3 sets no flags");
+
+    // CMP: signed overflow sets V
+    cpu.reset();
+    memory.write32(0x0000, 0x40108000);                     // MOVI R1, 0x8000
+    memory.write32(0x0004, 0x40200001);                     // MOVI R2, 1
+    memory.write32(0x0008, 0x09012000);                     // CMP R1, R2
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(!cpu.state().flag(kFlagZ), "CMP: 0x8000, 1 clears Z");
+    check(!cpu.state().flag(kFlagN), "CMP: 0x8000, 1 clears N");
+    check(!cpu.state().flag(kFlagC), "CMP: 0x8000, 1 clears C");
+    check(cpu.state().flag(kFlagV), "CMP: 0x8000, 1 sets V");
 }
