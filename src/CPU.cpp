@@ -94,6 +94,12 @@ namespace coresim {
             registers_.set(decoded.rd, value);
             break;
         }
+        case Opcode::STORE: {
+            Address ea = (state_.dbr() << 16) | ((registers_.get(decoded.rs1) + decoded.offset) & 0xFFFF);
+            Word value = registers_.get(decoded.rd);
+            memory_.write16(ea, value);
+            break;
+        }
         default:
             break;
         }
