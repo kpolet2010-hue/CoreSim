@@ -153,7 +153,7 @@ flowchart LR
 | 4. Decode | `decoder_.decode(instruction)` |
 | 5. Execute | `switch` on `Opcode` |
 
-Only 14 opcodes are executed so far. All others are decoded but do nothing:
+Only 19 opcodes are executed so far. All others are decoded but do nothing:
 
 | Opcode | Effect |
 |--------|--------|
@@ -171,6 +171,13 @@ Only 14 opcodes are executed so far. All others are decoded but do nothing:
 | `XOR` (`0x07`) | `R[rd] = R[rs1] ^ R[rs2]`, updates Z, N, C, V |
 | `NOT` (`0x08`) | `R[rd] = ~R[rs1] & 0xFFFF`, updates Z, N, C, V |
 | `CMP` (`0x09`) | computes `R[rs1] - R[rs2]`, updates Z, N, C, V, stores no result |
+| `JMP` (`0xC0`) | `PC = address` |
+| `JZ` (`0xC1`) | `PC = address` if Z is set |
+| `JNZ` (`0xC2`) | `PC = address` if Z is clear |
+| `JN` (`0xC3`) | `PC = address` if N is set |
+| `JC` (`0xC4`) | `PC = address` if C is set |
+
+`step()` has already advanced the PC by 4 before the jump runs. A taken jump overwrites it with the target, a jump that is not taken does nothing, so the CPU continues with the next instruction. Jumps do not change registers or flags.
 
 ```cpp
 Memory memory;
