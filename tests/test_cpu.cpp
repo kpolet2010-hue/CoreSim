@@ -527,4 +527,101 @@ void CpuTests::runTests() {
 
     cpu.step();
     check(cpu.registers().get(3) == 9, "JZ: next instruction is executed when not taken");
+
+    // JNZ jumps when Z is clear
+    cpu.reset();
+    memory.write32(0x0000, 0x40100003);                     // MOVI R1, 3
+    memory.write32(0x0004, 0x40200005);                     // MOVI R2, 5
+    memory.write32(0x0008, 0x09012000);                     // CMP R1, R2, sets N and C
+    memory.write32(0x000C, 0xC2000100);                     // JNZ 0x00100
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.state().pc() == 0x0100, "JNZ: Z clear, jumps to 0x00100");
+    check(cpu.state().flags() == (kFlagN | kFlagC), "JNZ: flags unchanged");
+
+    // JNZ does not jump when Z is set
+    cpu.reset();
+    memory.write32(0x0000, 0x40100005);                     // MOVI R1, 5
+    memory.write32(0x0004, 0x40200005);                     // MOVI R2, 5
+    memory.write32(0x0008, 0x09012000);                     // CMP R1, R2, sets Z
+    memory.write32(0x000C, 0xC2000100);                     // JNZ 0x00100
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.state().pc() == 0x0010, "JNZ: Z set, continues at 0x00010");
+    check(cpu.state().flags() == kFlagZ, "JNZ: flags unchanged when not taken");
+
+    // JN jumps when N is set
+    cpu.reset();
+    memory.write32(0x0000, 0x40100003);                     // MOVI R1, 3
+    memory.write32(0x0004, 0x40200005);                     // MOVI R2, 5
+    memory.write32(0x0008, 0x09012000);                     // CMP R1, R2, sets N and C
+    memory.write32(0x000C, 0xC3000100);                     // JN 0x00100
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.state().pc() == 0x0100, "JN: N set, jumps to 0x00100");
+    check(cpu.state().flags() == (kFlagN | kFlagC), "JN: flags unchanged");
+
+    // JN does not jump when N is clear
+    cpu.reset();
+    memory.write32(0x0000, 0x40100005);                     // MOVI R1, 5
+    memory.write32(0x0004, 0x40200003);                     // MOVI R2, 3
+    memory.write32(0x0008, 0x09012000);                     // CMP R1, R2, sets no flags
+    memory.write32(0x000C, 0xC3000100);                     // JN 0x00100
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.state().pc() == 0x0010, "JN: N clear, continues at 0x00010");
+
+    // JN after signed overflow: -32768 < 1, but N is clear, so JN does not jump
+    cpu.reset();
+    memory.write32(0x0000, 0x40108000);                     // MOVI R1, 0x8000
+    memory.write32(0x0004, 0x40200001);                     // MOVI R2, 1
+    memory.write32(0x0008, 0x09012000);                     // CMP R1, R2, sets only V
+    memory.write32(0x000C, 0xC3000100);                     // JN 0x00100
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.state().pc() == 0x0010, "JN: CMP 0x8000, 1 sets V but not N, no jump");
+    check(cpu.state().flags() == kFlagV, "JN: flags unchanged after signed overflow");
+
+    // JC jumps when C is set
+    cpu.reset();
+    memory.write32(0x0000, 0x40100003);                     // MOVI R1, 3
+    memory.write32(0x0004, 0x40200005);                     // MOVI R2, 5
+    memory.write32(0x0008, 0x09012000);                     // CMP R1, R2, sets N and C
+    memory.write32(0x000C, 0xC4000100);                     // JC 0x00100
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.state().pc() == 0x0100, "JC: C set, jumps to 0x00100");
+    check(cpu.state().flags() == (kFlagN | kFlagC), "JC: flags unchanged");
+
+    // JC does not jump when C is clear, even if Z is set
+    cpu.reset();
+    memory.write32(0x0000, 0x40100005);                     // MOVI R1, 5
+    memory.write32(0x0004, 0x40200005);                     // MOVI R2, 5
+    memory.write32(0x0008, 0x09012000);                     // CMP R1, R2, sets Z
+    memory.write32(0x000C, 0xC4000100);                     // JC 0x00100
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.state().pc() == 0x0010, "JC: C clear, continues at 0x00010");
+    check(cpu.state().flags() == kFlagZ, "JC: flags unchanged when not taken");
 }
