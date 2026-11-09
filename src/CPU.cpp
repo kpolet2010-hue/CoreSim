@@ -108,6 +108,13 @@ namespace coresim {
             state_.setPc(decoded.address);
             break;
         }
+        case Opcode::RET: {
+            state_.setPc(memory_.read32( state_.sp() ));
+            Address sp = state_.sp();
+            sp = sp + 4;
+            state_.setSp(sp);
+            break;
+        }
         default:
             break;
         }
