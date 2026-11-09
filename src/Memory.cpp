@@ -38,6 +38,22 @@ namespace coresim {
         return value;
     }
 
+    Word Memory::read16(Address address) const {
+        checkRange(address, 2);
+        Word value = 0;
+        for (unsigned i = 0; i < 2; ++i) {
+            value |= static_cast<std::uint32_t>(read8(address + i)) << (8 * i);
+        }
+        return value;
+    }
+
+    void Memory::write16(Address address, Word value) {
+        checkRange(address, 2);
+        for (unsigned i = 0; i < 2; ++i) {
+            write8(address + i, static_cast<std::uint8_t>(value >> (8 * i)));
+        }
+    }
+
     void Memory::checkRange(Address address, std::size_t size) const {
         if (address >= kMemorySize || size > kMemorySize - address) {
             throw std::out_of_range("Memory access out of bounds");

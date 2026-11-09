@@ -23,6 +23,8 @@ namespace coresim {
 
             std::size_t size() const { return data_.size(); }
 
+            Word read16(Address address) const;
+            void write16(Address address, Word value);
         private:
             void checkRange(Address address, std::size_t size) const;
 
