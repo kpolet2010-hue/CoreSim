@@ -88,6 +88,12 @@ namespace coresim {
                 state_.setPc(decoded.address);
             }
             break;
+        case Opcode::LOAD: {
+            Address ea = (state_.dbr() << 16) | ((registers_.get(decoded.rs1) + decoded.offset) & 0xFFFF);
+            Word value = memory_.read16(ea);
+            registers_.set(decoded.rd, value);
+            break;
+        }
         default:
             break;
         }
