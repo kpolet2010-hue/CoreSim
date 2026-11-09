@@ -19,8 +19,9 @@ The sections [Operands](#operands) to [Stack operations](#stack-operations) spec
 | `ADD`, `ADDI`, `SUB`, `MUL`, `DIV`, `CMP`, `AND`, `OR`, `XOR`, `NOT` | ✅ executed, calculated by `ALU` |
 | Flag updates of the ALU instructions | ✅ calculated by `ALU::execute()`, stored by `CPU::step()` |
 | `JMP`, `JZ`, `JNZ`, `JN`, `JC` | ✅ executed, a taken jump sets the PC in `CPU::step()` |
-| All other 7 opcodes (`LOAD`, `STORE`, `PUSH`, `POP`, `CALL`, `RET`, `OUT`) | ❌ decoded, but `step()` does nothing |
-| `Memory::read16()`/`write16()`, `OUT` stream | ❌ not implemented |
+| `LOAD`, `STORE` | ✅ executed, 16-bit access through `Memory::read16()`/`write16()` at the DBR-based effective address |
+| All other 5 opcodes (`PUSH`, `POP`, `CALL`, `RET`, `OUT`) | ❌ decoded, but `step()` does nothing |
+| `OUT` stream | ❌ not implemented |
 
 ## Opcode space
 
@@ -294,7 +295,7 @@ After `CMP a, b`, the jumps read as:
 
 ## Memory addressing
 
-> **ISA specification, not implemented yet.** This section defines how `LOAD` and `STORE` access memory. The 16-bit accesses `Memory::read16()` / `Memory::write16()` they need do not exist yet.
+> **ISA specification, implemented.** This section defines how `LOAD` and `STORE` access memory. Both are executed in `CPU::step()` and use `Memory::read16()` / `Memory::write16()` (see [MEMORY.md](MEMORY.md)).
 
 ### Access width
 
@@ -468,4 +469,4 @@ DecodedInstruction d = Decoder().decode(instr);
 
 `tests/test_alu.cpp` (suite `ALU`) checks the result and all four flags of every ALU operation without a CPU.
 
-`tests/test_cpu.cpp` (suite `CPU`) checks the implemented part of `step()`: fetch into IR, PC + 4, `NOP`, `HLT`, `MOV`, `MOVI`, the ALU instructions with their flags, the jumps `JMP`, `JZ`, `JNZ`, `JN` and `JC` (taken and not taken), the halted state and `reset()`. The remaining behaviour will be tested together with its implementation. See [TESTING.md](TESTING.md).
+`tests/test_cpu.cpp` (suite `CPU`) checks the implemented part of `step()`: fetch into IR, PC + 4, `NOP`, `HLT`, `MOV`, `MOVI`, the ALU instructions with their flags, the jumps `JMP`, `JZ`, `JNZ`, `JN` and `JC` (taken and not taken), `LOAD` and `STORE` with the effective address, the halted state and `reset()`. The remaining behaviour will be tested together with its implementation. See [TESTING.md](TESTING.md).

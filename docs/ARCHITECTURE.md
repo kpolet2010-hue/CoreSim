@@ -81,6 +81,8 @@ classDiagram
     class Memory {
         +read8(address) uint8
         +write8(address, value)
+        +read16(address) Word
+        +write16(address, value)
         +read32(address) uint32
         +write32(address, value)
         +reset()
@@ -153,7 +155,7 @@ flowchart LR
 | 4. Decode | `decoder_.decode(instruction)` |
 | 5. Execute | `switch` on `Opcode` |
 
-Only 19 opcodes are executed so far. All others are decoded but do nothing:
+Only 21 opcodes are executed so far. All others are decoded but do nothing:
 
 | Opcode | Effect |
 |--------|--------|
@@ -176,8 +178,14 @@ Only 19 opcodes are executed so far. All others are decoded but do nothing:
 | `JNZ` (`0xC2`) | `PC = address` if Z is clear |
 | `JN` (`0xC3`) | `PC = address` if N is set |
 | `JC` (`0xC4`) | `PC = address` if C is set |
+| `LOAD` (`0x80`) | `R[rd] = read16(ea)` |
+| `STORE` (`0x81`) | `write16(ea, R[rd])`, the `rd` field holds the value register |
 
 `step()` has already advanced the PC by 4 before the jump runs. A taken jump overwrites it with the target, a jump that is not taken does nothing, so the CPU continues with the next instruction. Jumps do not change registers or flags.
+
+The four conditional jumps share the private helper `jumpIf(condition, target)`.
+
+`LOAD` and `STORE` compute the effective address `ea = (DBR << 16) | ((R[rs1] + offset) & 0xFFFF)` in the private helper `effectiveAddress()`, so an access stays inside the 64 KB bank selected by DBR (see [ISA.md](ISA.md#memory-addressing)). They do not change the flags. An access at `0x3FFFF` throws `std::out_of_range` from `Memory`.
 
 ```cpp
 Memory memory;
@@ -210,20 +218,21 @@ AluResult r = alu.execute(AluOp::ADD, 0xFFFF, 1);
 | Writes the result to `R[rd]` | – | if `writesResult` is set |
 | Updates FLAGS in `CPUState` | – | ✅ |
 
-`AluOp` is separate from `Opcode`: it only contains the ten ALU operations, so the ALU cannot be asked to run an instruction like `JMP`, and it does not depend on the instruction encoding. `CPU::step()` selects the `AluOp` for each opcode and calls the private helper `executeAlu()`:
+`AluOp` is separate from `Opcode`: it only contains the nine ALU operations, so the ALU cannot be asked to run an instruction like `JMP`, and it does not depend on the instruction encoding. `ADD` and `ADDI` both use `AluOp::ADD`, because they only differ in where the CPU takes `b` from. `CPU::step()` selects the `AluOp` for each opcode, reads both operands and calls the private helper `executeAlu()`:
 
 ```mermaid
 sequenceDiagram
     participant S as CPU::step()
     participant H as CPU::executeAlu()
     participant A as ALU
-    S->>H: AluOp, decoded fields, b
-    H->>A: execute(op, R[rs1], b)
+    S->>H: AluOp, rd, a, b
+    H->>A: execute(op, a, b)
     A-->>H: AluResult
     H->>H: R[rd] = value (if writesResult)
     H->>H: set Z, N, C, V in CPUState
 ```
 
+- **`a`** is always `R[rs1]`.
 - **`b`** is `R[rs2]` for R-format instructions and the immediate for `ADDI`. `NOT` has only one operand and ignores `b`.
 - **`CMP`** returns the difference in `value` so that it works like `SUB`, but `writesResult` is `false`, so the CPU writes no register.
 - **Division by zero:** the ALU throws before the CPU writes anything, so `R[rd]` and the flags stay unchanged. The PC has already been advanced.

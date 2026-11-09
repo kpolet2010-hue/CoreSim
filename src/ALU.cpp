@@ -34,7 +34,6 @@ namespace coresim {
     AluResult ALU::execute(AluOp op, Word a, Word b) const {
         switch (op) {
             case AluOp::ADD:
-            case AluOp::ADDI:
                 return add(a, b);
             case AluOp::SUB:
                 return sub(a, b);

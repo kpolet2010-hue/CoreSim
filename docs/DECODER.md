@@ -139,7 +139,7 @@ The struct is value-initialized (`DecodedInstruction decoded{};`), so every memb
 
 ## Current behaviour
 
-- Opcodes only select the format. Their names and values are defined in `Opcode.h` (see [ISA.md](ISA.md)), but the decoder does not use them. `CPU::step()` decodes every fetched instruction and executes `NOP`, `HLT`, `MOV`, `MOVI` and the ALU instructions (`ADD`, `ADDI`, `SUB`, `MUL`, `DIV`, `CMP`, `AND`, `OR`, `XOR`, `NOT`) and the jumps `JMP`, `JZ`, `JNZ`, `JN` and `JC`; all other opcodes are not executed yet.
+- Opcodes only select the format. Their names and values are defined in `Opcode.h` (see [ISA.md](ISA.md)), but the decoder does not use them. `CPU::step()` decodes every fetched instruction and executes `NOP`, `HLT`, `MOV`, `MOVI` and the ALU instructions (`ADD`, `ADDI`, `SUB`, `MUL`, `DIV`, `CMP`, `AND`, `OR`, `XOR`, `NOT`) the jumps `JMP`, `JZ`, `JNZ`, `JN` and `JC`, `LOAD` and `STORE`; all other opcodes are not executed yet.
 - The decoder has no state. `decode()` only depends on its input.
 - Tested examples (`tests/test_decoder.cpp`):
 

@@ -20,15 +20,15 @@ CoreSim is an emulator for a custom 16-bit CPU (**CoreSim-16**), written in C++1
 
 | Component | State | Docs |
 |-----------|-------|------|
-| Memory (`Memory`) | ✅ 8/32-bit reads and writes, bounds checking | [MEMORY.md](docs/MEMORY.md) |
+| Memory (`Memory`) | ✅ 8/16/32-bit reads and writes, bounds checking | [MEMORY.md](docs/MEMORY.md) |
 | General-purpose registers (`Register`) | ✅ R0–R15, indexed access, reset | [REGISTERS.md](docs/REGISTERS.md) |
 | Special registers (`CPUState`) | ✅ PC, SP, IR, DBR, FLAGS with bit-width masking | [REGISTERS.md](docs/REGISTERS.md) |
 | Instruction decoder (`Decoder`) | ✅ R, I, M and J format, selected by the top 2 opcode bits | [DECODER.md](docs/DECODER.md) |
 | Instruction set (`Opcode`) | ✅ 26 opcodes with values in their format ranges | [ISA.md](docs/ISA.md) |
 | ALU (`ALU`) | ✅ `ADD`, `ADDI`, `SUB`, `MUL`, `DIV`, `CMP`, `AND`, `OR`, `XOR`, `NOT` with Z, N, C, V, independent of the CPU | [ARCHITECTURE.md](docs/ARCHITECTURE.md#alu) |
-| CPU (`CPU`) | ✅ Owns registers, state, decoder and ALU, references memory, `reset()`, `step()` (fetch, decode, `NOP`, `HLT`, `MOV`, `MOVI`, ALU instructions, `JMP`, `JZ`, `JNZ`, `JN`, `JC`) | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| CPU (`CPU`) | ✅ Owns registers, state, decoder and ALU, references memory, `reset()`, `step()` (fetch, decode, `NOP`, `HLT`, `MOV`, `MOVI`, ALU instructions, `JMP`, `JZ`, `JNZ`, `JN`, `JC`, `LOAD`, `STORE`) | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 
-`CPU::step()` fetches and decodes one instruction, but only `NOP`, `HLT`, `MOV`, `MOVI`, the ALU instructions and the jumps `JMP`, `JZ`, `JNZ`, `JN` and `JC` are executed so far. The behaviour of all other opcodes is specified in [ISA.md](docs/ISA.md), but not implemented yet.
+`CPU::step()` fetches and decodes one instruction, but only `NOP`, `HLT`, `MOV`, `MOVI`, the ALU instructions, the jumps `JMP`, `JZ`, `JNZ`, `JN` and `JC`, `LOAD` and `STORE` are executed so far. The behaviour of all other opcodes is specified in [ISA.md](docs/ISA.md), but not implemented yet.
 
 ## Building
 
