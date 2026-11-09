@@ -68,6 +68,11 @@ namespace coresim {
         case Opcode::JMP:
             state_.setPc(decoded.address);
             break;
+        case Opcode::JZ:
+            if(state_.flag(kFlagZ)) {
+                state_.setPc(decoded.address);
+            }    
+            break;
         default:
             break;
         }
