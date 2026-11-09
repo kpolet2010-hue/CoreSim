@@ -816,4 +816,68 @@ void CpuTests::runTests() {
     check(cpu.state().sp() == 0x000FE, "PUSH: SP = 0x00100 - 2 = 0x000FE");
     check(memory.read16(0x000FE) == 0x5555, "PUSH: pushes R[rs1], ignores the rd field");
     check(memory.read16(0x200FE) != 0x5555, "PUSH: DBR is not used");
+
+    // POP after PUSH restores the value and wraps SP back to 0x00000
+    cpu.reset();
+    memory.write32(0x0000, 0x40101234);                     // MOVI R1, 0x1234
+    memory.write32(0x0004, 0x0A010000);                     // PUSH R1
+    memory.write32(0x0008, 0x0B400000);                     // POP R4
+
+    cpu.step();
+    cpu.step();
+    cpu.state().setFlag(kFlagZ, true);
+    cpu.state().setFlag(kFlagC, true);
+    cpu.step();
+    check(cpu.registers().get(4) == 0x1234, "POP: R4 = 0x1234 from the stack");
+    check(cpu.state().sp() == 0x00000, "POP: SP = 0x3FFFE + 2 wraps to 0x00000");
+    check(cpu.registers().get(1) == 0x1234, "POP: R1 unchanged");
+    check(cpu.state().flags() == (kFlagZ | kFlagC), "POP: flags unchanged");
+    check(cpu.state().pc() == 0x000C, "POP: PC advances to 0x000C");
+
+    // POP returns the values in reverse order (last in, first out)
+    cpu.reset();
+    memory.write32(0x0000, 0x40101111);                     // MOVI R1, 0x1111
+    memory.write32(0x0004, 0x40202222);                     // MOVI R2, 0x2222
+    memory.write32(0x0008, 0x0A010000);                     // PUSH R1
+    memory.write32(0x000C, 0x0A020000);                     // PUSH R2
+    memory.write32(0x0010, 0x0B400000);                     // POP R4
+    memory.write32(0x0014, 0x0B500000);                     // POP R5
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(4) == 0x2222, "POP: first POP returns the last push (0x2222)");
+    check(cpu.state().sp() == 0x3FFFE, "POP: SP = 0x3FFFE after the first POP");
+    cpu.step();
+    check(cpu.registers().get(5) == 0x1111, "POP: second POP returns the first push (0x1111)");
+    check(cpu.state().sp() == 0x00000, "POP: SP back to 0x00000");
+
+    // POP from a set SP, the rs1 field and DBR are ignored, memory stays unchanged
+    cpu.reset();
+    cpu.state().setSp(0x00200);
+    cpu.state().setDbr(1);
+    memory.write16(0x00200, 0x7777);
+    memory.write16(0x10200, 0x0BAD);
+    memory.write32(0x0000, 0x40306666);                     // MOVI R3, 0x6666
+    memory.write32(0x0004, 0x0B430000);                     // POP R4 with rs1 field = 3
+
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(4) == 0x7777, "POP: reads at SP, DBR is not used");
+    check(cpu.registers().get(3) == 0x6666, "POP: R3 unchanged (rs1 field is ignored)");
+    check(cpu.state().sp() == 0x00202, "POP: SP = 0x00200 + 2 = 0x00202");
+    check(memory.read16(0x00200) == 0x7777, "POP: value stays in memory");
+
+    // POP at SP = 0x3FFFF does not fit into memory: throws, rd and SP unchanged
+    cpu.reset();
+    cpu.state().setSp(0x3FFFF);
+    memory.write32(0x0000, 0x40401234);                     // MOVI R4, 0x1234
+    memory.write32(0x0004, 0x0B400000);                     // POP R4
+
+    cpu.step();
+    check(throwsOutOfRange([&] { cpu.step(); }), "POP: 2 bytes at 0x3FFFF throw out_of_range");
+    check(cpu.registers().get(4) == 0x1234, "POP: failed pop keeps R4");
+    check(cpu.state().sp() == 0x3FFFF, "POP: failed pop keeps SP");
 }
