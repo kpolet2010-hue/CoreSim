@@ -155,7 +155,7 @@ flowchart LR
 | 4. Decode | `decoder_.decode(instruction)` |
 | 5. Execute | `switch` on `Opcode` |
 
-Only 21 opcodes are executed so far. All others are decoded but do nothing:
+25 of the 26 opcodes are executed. Only `OUT` is decoded but does nothing yet:
 
 | Opcode | Effect |
 |--------|--------|
@@ -180,12 +180,18 @@ Only 21 opcodes are executed so far. All others are decoded but do nothing:
 | `JC` (`0xC4`) | `PC = address` if C is set |
 | `LOAD` (`0x80`) | `R[rd] = read16(ea)` |
 | `STORE` (`0x81`) | `write16(ea, R[rd])`, the `rd` field holds the value register |
+| `PUSH` (`0x0A`) | `SP = SP - 2`, then `write16(SP, R[rs1])` |
+| `POP` (`0x0B`) | `R[rd] = read16(SP)`, then `SP = SP + 2` |
+| `CALL` (`0xC5`) | `SP = SP - 4`, then `write32(SP, PC)`, then `PC = address` |
+| `RET` (`0x0C`) | `PC = read32(SP)`, then `SP = SP + 4` |
 
 `step()` has already advanced the PC by 4 before the jump runs. A taken jump overwrites it with the target, a jump that is not taken does nothing, so the CPU continues with the next instruction. Jumps do not change registers or flags.
 
 The four conditional jumps share the private helper `jumpIf(condition, target)`.
 
 `LOAD` and `STORE` compute the effective address `ea = (DBR << 16) | ((R[rs1] + offset) & 0xFFFF)` in the private helper `effectiveAddress()`, so an access stays inside the 64 KB bank selected by DBR (see [ISA.md](ISA.md#memory-addressing)). They do not change the flags. An access at `0x3FFFF` throws `std::out_of_range` from `Memory`.
+
+The stack instructions use `SP` directly as an 18-bit address, without DBR. `setSp()` masks the new value, so the first `PUSH` after `reset()` wraps from `0x00000` to `0x3FFFE`. `PUSH` and `CALL` change `SP` before they write, `POP` and `RET` read before they change `SP`. A failing `POP` or `RET` therefore keeps `SP`, and a failing `CALL` does not jump. The stack instructions do not change the flags (see [ISA.md](ISA.md#stack-operations)).
 
 ```cpp
 Memory memory;

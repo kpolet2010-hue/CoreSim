@@ -776,4 +776,211 @@ void CpuTests::runTests() {
     cpu.step();
     check(throwsOutOfRange([&] { cpu.step(); }), "STORE: 2 bytes at 0x3FFFF throw out_of_range");
     check(memory.read8(0x3FFFF) == 0x5C, "STORE: failed store leaves memory unchanged");
+
+    // PUSH: the first push after reset wraps SP from 0x00000 to 0x3FFFE
+    cpu.reset();
+    memory.write32(0x0000, 0x40101234);                     // MOVI R1, 0x1234
+    memory.write32(0x0004, 0x0A010000);                     // PUSH R1
+    memory.write32(0x0008, 0x4020ABCD);                     // MOVI R2, 0xABCD
+    memory.write32(0x000C, 0x0A020000);                     // PUSH R2
+
+    cpu.step();
+    cpu.state().setFlag(kFlagZ, true);
+    cpu.state().setFlag(kFlagC, true);
+    cpu.step();
+    check(cpu.state().sp() == 0x3FFFE, "PUSH: SP = 0x00000 - 2 wraps to 0x3FFFE");
+    check(memory.read8(0x3FFFE) == 0x34, "PUSH: low byte 0x34 at 0x3FFFE");
+    check(memory.read8(0x3FFFF) == 0x12, "PUSH: high byte 0x12 at 0x3FFFF");
+    check(cpu.registers().get(1) == 0x1234, "PUSH: R1 unchanged");
+    check(cpu.state().flags() == (kFlagZ | kFlagC), "PUSH: flags unchanged");
+    check(cpu.state().pc() == 0x0008, "PUSH: PC advances to 0x0008");
+
+    // PUSH: a second push lies below the first one
+    cpu.step();
+    cpu.step();
+    check(cpu.state().sp() == 0x3FFFC, "PUSH: second push, SP = 0x3FFFC");
+    check(memory.read16(0x3FFFC) == 0xABCD, "PUSH: R2 = 0xABCD at 0x3FFFC");
+    check(memory.read16(0x3FFFE) == 0x1234, "PUSH: first value still at 0x3FFFE");
+
+    // PUSH from a set SP, the rd field and DBR are ignored
+    cpu.reset();
+    cpu.state().setSp(0x00100);
+    cpu.state().setDbr(2);
+    memory.write32(0x0000, 0x40105555);                     // MOVI R1, 0x5555
+    memory.write32(0x0004, 0x40306666);                     // MOVI R3, 0x6666
+    memory.write32(0x0008, 0x0A310000);                     // PUSH R1 with rd field = 3
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.state().sp() == 0x000FE, "PUSH: SP = 0x00100 - 2 = 0x000FE");
+    check(memory.read16(0x000FE) == 0x5555, "PUSH: pushes R[rs1], ignores the rd field");
+    check(memory.read16(0x200FE) != 0x5555, "PUSH: DBR is not used");
+
+    // POP after PUSH restores the value and wraps SP back to 0x00000
+    cpu.reset();
+    memory.write32(0x0000, 0x40101234);                     // MOVI R1, 0x1234
+    memory.write32(0x0004, 0x0A010000);                     // PUSH R1
+    memory.write32(0x0008, 0x0B400000);                     // POP R4
+
+    cpu.step();
+    cpu.step();
+    cpu.state().setFlag(kFlagZ, true);
+    cpu.state().setFlag(kFlagC, true);
+    cpu.step();
+    check(cpu.registers().get(4) == 0x1234, "POP: R4 = 0x1234 from the stack");
+    check(cpu.state().sp() == 0x00000, "POP: SP = 0x3FFFE + 2 wraps to 0x00000");
+    check(cpu.registers().get(1) == 0x1234, "POP: R1 unchanged");
+    check(cpu.state().flags() == (kFlagZ | kFlagC), "POP: flags unchanged");
+    check(cpu.state().pc() == 0x000C, "POP: PC advances to 0x000C");
+
+    // POP returns the values in reverse order (last in, first out)
+    cpu.reset();
+    memory.write32(0x0000, 0x40101111);                     // MOVI R1, 0x1111
+    memory.write32(0x0004, 0x40202222);                     // MOVI R2, 0x2222
+    memory.write32(0x0008, 0x0A010000);                     // PUSH R1
+    memory.write32(0x000C, 0x0A020000);                     // PUSH R2
+    memory.write32(0x0010, 0x0B400000);                     // POP R4
+    memory.write32(0x0014, 0x0B500000);                     // POP R5
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(4) == 0x2222, "POP: first POP returns the last push (0x2222)");
+    check(cpu.state().sp() == 0x3FFFE, "POP: SP = 0x3FFFE after the first POP");
+    cpu.step();
+    check(cpu.registers().get(5) == 0x1111, "POP: second POP returns the first push (0x1111)");
+    check(cpu.state().sp() == 0x00000, "POP: SP back to 0x00000");
+
+    // POP from a set SP, the rs1 field and DBR are ignored, memory stays unchanged
+    cpu.reset();
+    cpu.state().setSp(0x00200);
+    cpu.state().setDbr(1);
+    memory.write16(0x00200, 0x7777);
+    memory.write16(0x10200, 0x0BAD);
+    memory.write32(0x0000, 0x40306666);                     // MOVI R3, 0x6666
+    memory.write32(0x0004, 0x0B430000);                     // POP R4 with rs1 field = 3
+
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(4) == 0x7777, "POP: reads at SP, DBR is not used");
+    check(cpu.registers().get(3) == 0x6666, "POP: R3 unchanged (rs1 field is ignored)");
+    check(cpu.state().sp() == 0x00202, "POP: SP = 0x00200 + 2 = 0x00202");
+    check(memory.read16(0x00200) == 0x7777, "POP: value stays in memory");
+
+    // POP at SP = 0x3FFFF does not fit into memory: throws, rd and SP unchanged
+    cpu.reset();
+    cpu.state().setSp(0x3FFFF);
+    memory.write32(0x0000, 0x40401234);                     // MOVI R4, 0x1234
+    memory.write32(0x0004, 0x0B400000);                     // POP R4
+
+    cpu.step();
+    check(throwsOutOfRange([&] { cpu.step(); }), "POP: 2 bytes at 0x3FFFF throw out_of_range");
+    check(cpu.registers().get(4) == 0x1234, "POP: failed pop keeps R4");
+    check(cpu.state().sp() == 0x3FFFF, "POP: failed pop keeps SP");
+
+    // CALL saves the return address on the stack and jumps (example from ISA.md)
+    cpu.reset();
+    cpu.state().setPc(0x00010);
+    memory.write32(0x0010, 0xC5000100);                     // CALL 0x00100
+    memory.write32(0x0014, 0x40300BAD);                     // MOVI R3, 0x0BAD, skipped
+    memory.write32(0x0100, 0x40200007);                     // MOVI R2, 7
+    cpu.state().setFlag(kFlagZ, true);
+    cpu.state().setFlag(kFlagC, true);
+
+    cpu.step();
+    check(cpu.state().pc() == 0x00100, "CALL: PC = 0x00100");
+    check(cpu.state().sp() == 0x3FFFC, "CALL: SP = 0x00000 - 4 wraps to 0x3FFFC");
+    check(memory.read32(0x3FFFC) == 0x00014, "CALL: return address 0x00014 at 0x3FFFC");
+    check(cpu.state().flags() == (kFlagZ | kFlagC), "CALL: flags unchanged");
+
+    cpu.step();
+    check(cpu.registers().get(2) == 7, "CALL: instruction at the target is executed");
+    check(cpu.registers().get(3) == 0, "CALL: instruction after the call is skipped");
+
+    // CALL ignores the unused bits and DBR
+    cpu.reset();
+    cpu.state().setDbr(2);
+    memory.write32(0x0000, 0xC5FC0100);                     // CALL 0x00100, unused bits set
+
+    cpu.step();
+    check(cpu.state().pc() == 0x00100, "CALL: unused bits are ignored, PC = 0x00100");
+    check(memory.read32(0x3FFFC) == 0x00004, "CALL: DBR is not used for the stack");
+
+    // nested CALLs stack their return addresses
+    cpu.reset();
+    cpu.state().setSp(0x00200);
+    memory.write32(0x0000, 0xC5000100);                     // CALL 0x00100
+    memory.write32(0x0100, 0xC5000180);                     // CALL 0x00180
+
+    cpu.step();
+    cpu.step();
+    check(cpu.state().pc() == 0x00180, "CALL nested: PC = 0x00180");
+    check(cpu.state().sp() == 0x001F8, "CALL nested: SP = 0x00200 - 8 = 0x001F8");
+    check(memory.read32(0x001FC) == 0x00004, "CALL nested: first return address 0x00004 at 0x001FC");
+    check(memory.read32(0x001F8) == 0x00104, "CALL nested: second return address 0x00104 at 0x001F8");
+
+    // CALL whose stack slot does not fit into memory throws and does not jump
+    cpu.reset();
+    cpu.state().setSp(0x00003);
+    memory.write32(0x0000, 0xC5000100);                     // CALL 0x00100, slot at 0x3FFFF
+
+    check(throwsOutOfRange([&] { cpu.step(); }), "CALL: 4 bytes at 0x3FFFF throw out_of_range");
+    check(cpu.state().pc() == 0x00004, "CALL: failed call does not jump");
+
+    // RET returns to the instruction after the CALL (example from ISA.md)
+    cpu.reset();
+    cpu.state().setPc(0x00010);
+    memory.write32(0x0010, 0xC5000100);                     // CALL 0x00100
+    memory.write32(0x0014, 0x40200007);                     // MOVI R2, 7
+    memory.write32(0x0100, 0x0C000000);                     // RET
+
+    cpu.step();
+    cpu.state().setFlag(kFlagZ, true);
+    cpu.state().setFlag(kFlagC, true);
+    cpu.step();
+    check(cpu.state().pc() == 0x00014, "RET: PC = return address 0x00014");
+    check(cpu.state().sp() == 0x00000, "RET: SP = 0x3FFFC + 4 wraps to 0x00000");
+    check(cpu.state().flags() == (kFlagZ | kFlagC), "RET: flags unchanged");
+
+    cpu.step();
+    check(cpu.registers().get(2) == 7, "RET: execution continues after the CALL");
+
+    // nested CALL and RET return in reverse order
+    cpu.reset();
+    cpu.state().setSp(0x00200);
+    memory.write32(0x0000, 0xC5000100);                     // CALL 0x00100
+    memory.write32(0x0100, 0xC5000180);                     // CALL 0x00180
+    memory.write32(0x0104, 0x0C000000);                     // RET
+    memory.write32(0x0180, 0x0C000000);                     // RET
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.state().pc() == 0x00104, "RET nested: inner RET returns to 0x00104");
+    check(cpu.state().sp() == 0x001FC, "RET nested: SP = 0x001FC after the inner RET");
+    cpu.step();
+    check(cpu.state().pc() == 0x00004, "RET nested: outer RET returns to 0x00004");
+    check(cpu.state().sp() == 0x00200, "RET nested: SP back to 0x00200");
+
+    // RET keeps only the lower 18 bits of the stored value
+    cpu.reset();
+    cpu.state().setSp(0x00300);
+    memory.write32(0x00300, 0xFFFC0040);
+    memory.write32(0x0000, 0x0C000000);                     // RET
+
+    cpu.step();
+    check(cpu.state().pc() == 0x00040, "RET: 0xFFFC0040 is masked to PC = 0x00040");
+    check(cpu.state().sp() == 0x00304, "RET: SP = 0x00300 + 4 = 0x00304");
+
+    // RET whose stack slot does not fit into memory throws, PC and SP unchanged
+    cpu.reset();
+    cpu.state().setSp(0x3FFFD);
+    memory.write32(0x0000, 0x0C000000);                     // RET
+
+    check(throwsOutOfRange([&] { cpu.step(); }), "RET: 4 bytes at 0x3FFFD throw out_of_range");
+    check(cpu.state().pc() == 0x00004, "RET: failed return keeps PC");
+    check(cpu.state().sp() == 0x3FFFD, "RET: failed return keeps SP");
 }

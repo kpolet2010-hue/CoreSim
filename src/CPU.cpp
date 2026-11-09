@@ -86,6 +86,35 @@ namespace coresim {
             // the rd field holds the register whose value is stored
             memory_.write16(effectiveAddress(decoded), registers_.get(decoded.rd));
             break;
+        case Opcode::PUSH: {
+            Address sp = state_.sp();
+            sp = sp -2;
+            state_.setSp(sp);
+            memory_.write16(state_.sp(), registers_.get(decoded.rs1));
+            break;
+        }
+        case Opcode::POP: {
+            registers_.set(decoded.rd, memory_.read16( state_.sp() ));
+            Address sp = state_.sp();
+            sp = sp + 2;
+            state_.setSp(sp);
+            break;
+        }
+        case Opcode::CALL: {
+            Address sp = state_.sp();
+            sp = sp - 4;
+            state_.setSp(sp);
+            memory_.write32(state_.sp(), state_.pc());
+            state_.setPc(decoded.address);
+            break;
+        }
+        case Opcode::RET: {
+            state_.setPc(memory_.read32( state_.sp() ));
+            Address sp = state_.sp();
+            sp = sp + 4;
+            state_.setSp(sp);
+            break;
+        }
         default:
             break;
         }
