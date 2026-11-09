@@ -20,8 +20,8 @@ The sections [Operands](#operands) to [Stack operations](#stack-operations) spec
 | Flag updates of the ALU instructions | ✅ calculated by `ALU::execute()`, stored by `CPU::step()` |
 | `JMP`, `JZ`, `JNZ`, `JN`, `JC` | ✅ executed, a taken jump sets the PC in `CPU::step()` |
 | `LOAD`, `STORE` | ✅ executed, 16-bit access through `Memory::read16()`/`write16()` at the DBR-based effective address |
-| All other 5 opcodes (`PUSH`, `POP`, `CALL`, `RET`, `OUT`) | ❌ decoded, but `step()` does nothing |
-| `OUT` stream | ❌ not implemented |
+| `PUSH`, `POP`, `CALL`, `RET` | ✅ executed, the stack lives in memory at `SP` |
+| `OUT` | ❌ decoded, but `step()` does nothing, the output stream does not exist yet |
 
 ## Opcode space
 
@@ -232,7 +232,7 @@ All ALU instructions update **all four** flags. All other instructions leave the
 
 ## Execution cycle and jumps
 
-> **ISA specification, partly implemented.** Steps 1–4 below are implemented in `CPU::step()`, step 5 for `NOP`, `HLT`, `MOV`, `MOVI`, the ALU instructions and the jumps `JMP`, `JZ`, `JNZ`, `JN` and `JC`. `CALL` is not implemented yet.
+> **ISA specification, partly implemented.** Steps 1–4 below are implemented in `CPU::step()`, step 5 for every instruction except `OUT`, including all jumps and `CALL`.
 
 ### One step
 
@@ -358,7 +358,7 @@ flowchart LR
 
 ## Stack operations
 
-> **ISA specification, not implemented yet.** This section defines `PUSH`, `POP`, `CALL` and `RET`.
+> **ISA specification, implemented.** This section defines `PUSH`, `POP`, `CALL` and `RET`. All four are executed in `CPU::step()`.
 
 The stack is **full descending**:
 
@@ -469,4 +469,4 @@ DecodedInstruction d = Decoder().decode(instr);
 
 `tests/test_alu.cpp` (suite `ALU`) checks the result and all four flags of every ALU operation without a CPU.
 
-`tests/test_cpu.cpp` (suite `CPU`) checks the implemented part of `step()`: fetch into IR, PC + 4, `NOP`, `HLT`, `MOV`, `MOVI`, the ALU instructions with their flags, the jumps `JMP`, `JZ`, `JNZ`, `JN` and `JC` (taken and not taken), `LOAD` and `STORE` with the effective address, the halted state and `reset()`. The remaining behaviour will be tested together with its implementation. See [TESTING.md](TESTING.md).
+`tests/test_cpu.cpp` (suite `CPU`) checks the implemented part of `step()`: fetch into IR, PC + 4, `NOP`, `HLT`, `MOV`, `MOVI`, the ALU instructions with their flags, the jumps `JMP`, `JZ`, `JNZ`, `JN` and `JC` (taken and not taken), `LOAD` and `STORE` with the effective address, `PUSH`, `POP`, `CALL` and `RET`, the halted state and `reset()`. `OUT` will be tested together with its implementation. See [TESTING.md](TESTING.md).
