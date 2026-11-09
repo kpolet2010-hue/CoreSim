@@ -4,9 +4,9 @@
 
 namespace coresim {
 
+    // ADD and ADDI both use ADD, they only differ in where the cpu takes b from
     enum class AluOp {
         ADD,
-        ADDI,
         SUB,
         MUL,
         DIV,

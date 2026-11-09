@@ -28,13 +28,8 @@ void AluTests::runTests() {
     check(matches(alu.execute(AluOp::ADD, 0xFFFF, 0xFFFF), 0xFFFE, 0, 1, 1, 0), "ADD: 0xFFFF + 0xFFFF = 0xFFFE, sets N and C");
     check(matches(alu.execute(AluOp::ADD, 0x7FFF, 1), 0x8000, 0, 1, 0, 1), "ADD: 0x7FFF + 1 sets N and V");
     check(matches(alu.execute(AluOp::ADD, 0x8000, 0x8000), 0, 1, 0, 1, 1), "ADD: 0x8000 + 0x8000 sets Z, C and V");
+    check(matches(alu.execute(AluOp::ADD, 1, 0xFFFF), 0, 1, 0, 1, 0), "ADD: 1 + 0xFFFF (-1 as ADDI immediate) wraps to 0, sets Z and C");
     check(alu.execute(AluOp::ADD, 5, 7).writesResult, "ADD: result is written");
-
-    // ADDI
-    check(matches(alu.execute(AluOp::ADDI, 5, 7), 12, 0, 0, 0, 0), "ADDI: 5 + 7 = 12, no flags");
-    check(matches(alu.execute(AluOp::ADDI, 1, 0xFFFF), 0, 1, 0, 1, 0), "ADDI: 1 + 0xFFFF wraps to 0, sets Z and C");
-    check(matches(alu.execute(AluOp::ADDI, 0x7FFF, 1), 0x8000, 0, 1, 0, 1), "ADDI: 0x7FFF + 1 sets N and V");
-    check(alu.execute(AluOp::ADDI, 5, 7).writesResult, "ADDI: result is written");
 
     // SUB
     check(matches(alu.execute(AluOp::SUB, 7, 5), 2, 0, 0, 0, 0), "SUB: 7 - 5 = 2, no flags");

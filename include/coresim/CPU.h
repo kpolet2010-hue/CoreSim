@@ -31,7 +31,13 @@ namespace coresim {
             Decoder decoder_;
             ALU alu_;
             bool halted_ = false;
-            void executeAlu(AluOp op, const DecodedInstruction& decoded, Word b = 0);
+
+            // runs the alu on a and b, writes the result to R[rd] and updates the flags
+            void executeAlu(AluOp op, std::uint8_t rd, Word a, Word b = 0);
+            // sets the pc to target if condition is true
+            void jumpIf(bool condition, Address target);
+            // (DBR << 16) | ((R[rs1] + offset) & 0xFFFF), used by LOAD and STORE
+            Address effectiveAddress(const DecodedInstruction& decoded) const;
     };
 
 } // namespace coresim
