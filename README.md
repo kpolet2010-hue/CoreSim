@@ -76,6 +76,7 @@ examples/          example programs (none yet)
 - [DECODER.md](docs/DECODER.md) – 32-bit instruction format and decoding
 - [ISA.md](docs/ISA.md) – opcodes, their values and formats
 - [TESTING.md](docs/TESTING.md) – test suites and CI
+- [LOADER.md](docs/LOADER.md) – hex text format for programs (specification, not implemented yet)
 
 Diagrams (open with [draw.io](https://www.drawio.com/)):
 
