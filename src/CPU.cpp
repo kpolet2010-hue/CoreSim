@@ -73,6 +73,21 @@ namespace coresim {
                 state_.setPc(decoded.address);
             }    
             break;
+        case Opcode::JNZ:
+            if(!state_.flag(kFlagZ)) {
+                state_.setPc(decoded.address);
+            }
+            break;
+        case Opcode::JN: 
+            if(state_.flag(kFlagN)) {
+                state_.setPc(decoded.address);
+            }
+            break;
+        case Opcode::JC:
+            if(state_.flag(kFlagC)) {
+                state_.setPc(decoded.address);
+            }
+            break;
         default:
             break;
         }
