@@ -489,4 +489,42 @@ void CpuTests::runTests() {
     check(cpu.state().pc() == 0x0000, "JMP to itself: PC = 0x00000");
     cpu.step();
     check(cpu.state().pc() == 0x0000, "JMP to itself: PC stays 0x00000");
+
+    // JZ jumps when Z is set and keeps the flags
+    cpu.reset();
+    memory.write32(0x0000, 0x40100005);                     // MOVI R1, 5
+    memory.write32(0x0004, 0x40200005);                     // MOVI R2, 5
+    memory.write32(0x0008, 0x09012000);                     // CMP R1, R2, sets Z
+    memory.write32(0x000C, 0xC1000100);                     // JZ 0x00100
+    memory.write32(0x0010, 0x40300BAD);                     // MOVI R3, 0x0BAD, skipped
+    memory.write32(0x0100, 0x40400007);                     // MOVI R4, 7
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.state().pc() == 0x0100, "JZ: Z set, jumps to 0x00100");
+    check(cpu.state().flags() == kFlagZ, "JZ: flags unchanged");
+
+    cpu.step();
+    check(cpu.registers().get(4) == 7, "JZ: instruction at the target is executed");
+    check(cpu.registers().get(3) == 0, "JZ: instruction after the jump is skipped");
+
+    // JZ does not jump when Z is clear, even if N and C are set
+    cpu.reset();
+    memory.write32(0x0000, 0x40100003);                     // MOVI R1, 3
+    memory.write32(0x0004, 0x40200005);                     // MOVI R2, 5
+    memory.write32(0x0008, 0x09012000);                     // CMP R1, R2, sets N and C
+    memory.write32(0x000C, 0xC1000100);                     // JZ 0x00100
+    memory.write32(0x0010, 0x40300009);                     // MOVI R3, 9
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.state().pc() == 0x0010, "JZ: Z clear, continues at 0x00010");
+    check(cpu.state().flags() == (kFlagN | kFlagC), "JZ: flags unchanged when not taken");
+
+    cpu.step();
+    check(cpu.registers().get(3) == 9, "JZ: next instruction is executed when not taken");
 }
