@@ -5,18 +5,20 @@
 #include "coresim/Memory.h"
 #include "coresim/Register.h"
 #include "coresim/Decoder.h"
+#include <iostream>
 
 namespace coresim {
 
 // 16 bit cpu with 16 general purpose registers
     class CPU {
         public:
-            explicit CPU(Memory& memory);
+            explicit CPU(Memory& memory, std::ostream& output = std::cout);
 
             void reset();
             void step();
             bool halted() const { return halted_; }
             Memory& memory() { return memory_; }
+            std::ostream& output() { return output_; }
 
             Register& registers() { return registers_; }
             const Register& registers() const { return registers_; }
@@ -26,6 +28,7 @@ namespace coresim {
 
         private:
             Memory& memory_;
+            std::ostream& output_;
             Register registers_;
             CPUState state_;
             Decoder decoder_;

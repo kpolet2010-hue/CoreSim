@@ -3,7 +3,7 @@
 
 namespace coresim {
 
-    CPU::CPU(Memory& memory) : memory_(memory) {}
+    CPU::CPU(Memory& memory, std::ostream& output) : memory_(memory), output_(output) {}
 
     void CPU::reset() {
         registers_.reset();
@@ -115,6 +115,9 @@ namespace coresim {
             state_.setSp(sp);
             break;
         }
+        case Opcode::OUT:
+            output_ << registers_.get(decoded.rs1) << '\n';
+            break;
         default:
             break;
         }

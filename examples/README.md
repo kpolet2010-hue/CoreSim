@@ -1,6 +1,6 @@
 # Examples
 
-There are no example programs yet. The CPU executes every instruction except `OUT`, which is still missing.
+There are no example programs yet, although the CPU now executes all 26 instructions.
 
 What can be tried today:
 

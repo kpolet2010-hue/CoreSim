@@ -21,7 +21,7 @@ The sections [Operands](#operands) to [Stack operations](#stack-operations) spec
 | `JMP`, `JZ`, `JNZ`, `JN`, `JC` | ✅ executed, a taken jump sets the PC in `CPU::step()` |
 | `LOAD`, `STORE` | ✅ executed, 16-bit access through `Memory::read16()`/`write16()` at the DBR-based effective address |
 | `PUSH`, `POP`, `CALL`, `RET` | ✅ executed, the stack lives in memory at `SP` |
-| `OUT` | ❌ decoded, but `step()` does nothing, the output stream does not exist yet |
+| `OUT` | ✅ executed, writes to the CPU's output stream (`std::cout` by default) |
 
 ## Opcode space
 
@@ -129,7 +129,7 @@ Rule of thumb: `rd` is written, `rs1` and `rs2` are read. The only exception is 
 
 ## Semantics
 
-> **ISA specification, partly implemented.** This section defines the observable effect on the registers. `MOV`, `MOVI`, `NOP` and `HLT` are implemented in `CPU::step()`, `ADD`, `ADDI`, `SUB`, `MUL`, `DIV`, `AND`, `OR`, `XOR`, `NOT` and `CMP` in `ALU::execute()` (see [ARCHITECTURE.md](ARCHITECTURE.md#alu)). `OUT` is not implemented yet. Flags, the PC, memory accesses and the stack are specified separately.
+> **ISA specification, implemented.** This section defines the observable effect on the registers. `MOV`, `MOVI`, `NOP`, `HLT` and `OUT` are implemented in `CPU::step()`, `ADD`, `ADDI`, `SUB`, `MUL`, `DIV`, `AND`, `OR`, `XOR`, `NOT` and `CMP` in `ALU::execute()` (see [ARCHITECTURE.md](ARCHITECTURE.md#alu)). Flags, the PC, memory accesses and the stack are specified separately.
 
 `R[x]` is the value of register `x`. All registers are 16 bit wide, so every result is truncated to 16 bits (`& 0xFFFF`).
 
@@ -164,7 +164,7 @@ For `ADD`, `ADDI`, `SUB` and `MUL`, signed and unsigned interpretation give the 
 ### `OUT`
 
 - Writes `R[rs1]` as an unsigned decimal number followed by a newline: `R1 = 0x0041` → `65`.
-- The CPU writes to a `std::ostream&`, so tests can capture the output (e.g. with `std::ostringstream`).
+- The CPU writes to a `std::ostream&`, so tests can capture the output (e.g. with `std::ostringstream`). The stream is the optional second constructor parameter, `CPU cpu(memory, output);`, and defaults to `std::cout`.
 
 ### `HLT`
 
@@ -232,7 +232,7 @@ All ALU instructions update **all four** flags. All other instructions leave the
 
 ## Execution cycle and jumps
 
-> **ISA specification, partly implemented.** Steps 1–4 below are implemented in `CPU::step()`, step 5 for every instruction except `OUT`, including all jumps and `CALL`.
+> **ISA specification, implemented.** All steps below are implemented in `CPU::step()`, including all jumps and `CALL`.
 
 ### One step
 
@@ -469,4 +469,4 @@ DecodedInstruction d = Decoder().decode(instr);
 
 `tests/test_alu.cpp` (suite `ALU`) checks the result and all four flags of every ALU operation without a CPU.
 
-`tests/test_cpu.cpp` (suite `CPU`) checks the implemented part of `step()`: fetch into IR, PC + 4, `NOP`, `HLT`, `MOV`, `MOVI`, the ALU instructions with their flags, the jumps `JMP`, `JZ`, `JNZ`, `JN` and `JC` (taken and not taken), `LOAD` and `STORE` with the effective address, `PUSH`, `POP`, `CALL` and `RET`, the halted state and `reset()`. `OUT` will be tested together with its implementation. See [TESTING.md](TESTING.md).
+`tests/test_cpu.cpp` (suite `CPU`) checks `step()` for all 26 instructions: fetch into IR, PC + 4, `NOP`, `HLT`, `MOV`, `MOVI`, the ALU instructions with their flags, the jumps `JMP`, `JZ`, `JNZ`, `JN` and `JC` (taken and not taken), `LOAD` and `STORE` with the effective address, `PUSH`, `POP`, `CALL` and `RET`, `OUT` with a captured output stream, the halted state and `reset()`. See [TESTING.md](TESTING.md).
