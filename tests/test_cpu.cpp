@@ -1035,4 +1035,59 @@ void CpuTests::runTests() {
     Memory defaultMemory;
     CPU defaultCpu(defaultMemory);
     check(&defaultCpu.output() == &std::cout, "OUT: default output is std::cout");
+
+    // run executes until HLT and returns true
+    cpu.reset();
+    memory.write32(0x0000, 0x40100005);                     // MOVI R1, 5
+    memory.write32(0x0004, 0x41110001);                     // ADDI R1, R1, 1
+    memory.write32(0x0008, 0x0E000000);                     // HLT
+
+    check(cpu.run(100), "run: returns true when the program halts");
+    check(cpu.halted(), "run: CPU is halted after HLT");
+    check(cpu.registers().get(1) == 6, "run: R1 = 5 + 1 = 6");
+    check(cpu.state().pc() == 0x000C, "run: PC stops after HLT at 0x0000C");
+
+    // run on an already halted CPU does nothing
+    check(cpu.run(100), "run: already halted, returns true");
+    check(cpu.state().pc() == 0x000C, "run: already halted, PC unchanged");
+
+    // run stops an endless loop after maxSteps and returns false
+    cpu.reset();
+    memory.write32(0x0000, 0xC0000000);                     // JMP 0x00000
+
+    check(!cpu.run(10), "run: endless loop, returns false after maxSteps");
+    check(!cpu.halted(), "run: endless loop, CPU is not halted");
+    check(cpu.state().pc() == 0x0000, "run: endless loop, PC = 0x00000");
+
+    // run executes exactly maxSteps instructions and can be continued
+    cpu.reset();
+    memory.write32(0x0000, 0x0D000000);                     // NOP
+    memory.write32(0x0004, 0x0D000000);                     // NOP
+    memory.write32(0x0008, 0x0D000000);                     // NOP
+    memory.write32(0x000C, 0x0D000000);                     // NOP
+    memory.write32(0x0010, 0x0D000000);                     // NOP
+    memory.write32(0x0014, 0x0E000000);                     // HLT
+
+    check(!cpu.run(3), "run(3): stops after 3 steps, returns false");
+    check(cpu.state().pc() == 0x000C, "run(3): PC = 0x0000C after 3 steps");
+    check(cpu.run(10), "run: continues and reaches HLT");
+    check(cpu.state().pc() == 0x0018, "run: PC = 0x00018 after HLT at 0x00014");
+
+    // run(0) executes nothing
+    cpu.reset();
+    check(!cpu.run(0), "run(0): returns false");
+    check(cpu.state().pc() == 0x0000, "run(0): PC unchanged");
+
+    // a whole program: count down from 3 and print every value
+    cpu.reset();
+    output.str("");
+    memory.write32(0x0000, 0x40100003);                     // MOVI R1, 3
+    memory.write32(0x0004, 0x0F010000);                     // loop: OUT R1
+    memory.write32(0x0008, 0x4111FFFF);                     //       ADDI R1, R1, -1
+    memory.write32(0x000C, 0xC2000004);                     //       JNZ loop
+    memory.write32(0x0010, 0x0E000000);                     // HLT
+
+    check(cpu.run(100), "run countdown: program halts");
+    check(output.str() == "3\n2\n1\n", "run countdown: prints 3, 2 and 1");
+    check(cpu.registers().get(1) == 0, "run countdown: R1 ends at 0");
 }
