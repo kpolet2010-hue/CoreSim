@@ -27,6 +27,7 @@ CoreSim is an emulator for a custom 16-bit CPU (**CoreSim-16**), written in C++1
 | Instruction set (`Opcode`) | ✅ 26 opcodes with values in their format ranges | [ISA.md](docs/ISA.md) |
 | ALU (`ALU`) | ✅ `ADD`, `ADDI`, `SUB`, `MUL`, `DIV`, `CMP`, `AND`, `OR`, `XOR`, `NOT` with Z, N, C, V, independent of the CPU | [ARCHITECTURE.md](docs/ARCHITECTURE.md#alu) |
 | CPU (`CPU`) | ✅ Owns registers, state, decoder and ALU, references memory and an output stream, `reset()`, `step()` (fetch, decode and all 26 instructions), `run()` until `HLT` | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| Program loader (`loadHex`) | ✅ Loads hex text programs with comments into memory, reports invalid lines with their line number | [LOADER.md](docs/LOADER.md) |
 
 `CPU::step()` fetches, decodes and executes one instruction. All 26 opcodes specified in [ISA.md](docs/ISA.md) are implemented. `OUT` writes to `std::cout` unless another stream is passed to the CPU. `CPU::run(maxSteps)` executes a whole program until `HLT`, with a step limit against endless loops.
 
@@ -76,7 +77,7 @@ examples/          example programs (none yet)
 - [DECODER.md](docs/DECODER.md) – 32-bit instruction format and decoding
 - [ISA.md](docs/ISA.md) – opcodes, their values and formats
 - [TESTING.md](docs/TESTING.md) – test suites and CI
-- [LOADER.md](docs/LOADER.md) – hex text format for programs (specification, not implemented yet)
+- [LOADER.md](docs/LOADER.md) – hex text format for programs and `loadHex()`
 
 Diagrams (open with [draw.io](https://www.drawio.com/)):
 

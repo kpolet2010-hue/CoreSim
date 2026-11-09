@@ -31,6 +31,7 @@ flowchart LR
 | `Opcode` | `Opcode.h` | Names and values of the 26 opcodes (`enum class`) → [ISA.md](ISA.md) |
 | `ALU` | `ALU.h` | Calculates results and flags of the ALU instructions, see [ALU](#alu) |
 | `CPU` | `CPU.h` | Groups registers, state, decoder, ALU and memory; `step()` fetches, decodes and executes one instruction, `run()` repeats it until `HLT` |
+| `loadHex` | `Loader.h` | Loads a program in hex text format into memory → [LOADER.md](LOADER.md) |
 
 ## Shared types
 
@@ -288,6 +289,8 @@ Invalid accesses throw `std::out_of_range`:
 | `Register` | Register index ≥ 16 |
 
 `ALU::execute()` throws `std::runtime_error` on `DIV` by zero. `CPU::step()` does not catch it.
+
+`loadHex()` throws `std::runtime_error` with the line number for a line that is not exactly 8 hex digits (see [LOADER.md](LOADER.md#errors)).
 
 `CPUState` setters never throw. They mask values to the register's bit width instead (see [REGISTERS.md](REGISTERS.md)).
 

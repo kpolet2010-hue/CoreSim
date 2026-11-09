@@ -1,6 +1,6 @@
 # Program loader
 
-> **Specification, not implemented yet.** This document defines the hex text format for CoreSim programs and how `loadHex()` loads it into memory. Nothing in this file exists in the code yet.
+> **Implemented** in `include/coresim/Loader.h` and `src/Loader.cpp`, tested in `tests/test_loader.cpp`. This document defines the hex text format for CoreSim programs and how `loadHex()` loads it into memory.
 
 ## Why a text format
 
@@ -55,4 +55,24 @@ std::size_t loadHex(std::istream& input, Memory& memory);
 
 - Reads the program from `input` and writes it to `memory`.
 - Returns the number of loaded instructions.
-- Takes a `std::istream`, so tests can pass a `std::istringstream` instead of a real file. Opening the file is left to the caller, e.g. `main.cpp`.
+- Takes a `std::istream`, so tests can pass a `std::istringstream` instead of a real file. Opening the file is left to the caller.
+
+```cpp
+Memory memory;
+std::ostringstream output;
+CPU cpu(memory, output);
+
+std::istringstream program("40100003\n0F010000\n4111FFFF\nC2000004\n0E000000\n");
+loadHex(program, memory);   // returns 5
+cpu.run(100);               // output.str() == "3\n2\n1\n"
+```
+
+## How a line is processed
+
+1. Count the line, so the error message can name it.
+2. Cut off everything from `;`.
+3. Skip the line if only whitespace is left.
+4. Trim spaces, tabs and `\r` at both ends.
+5. Remove a `0x` or `0X` prefix.
+6. Check that exactly 8 hex digits are left (`std::isxdigit`), otherwise throw.
+7. Convert with `std::stoul(text, nullptr, 16)` and write the value with `write32` to `count * 4`.
