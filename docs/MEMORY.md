@@ -20,12 +20,19 @@
 | `Memory()` | Allocates 256 KB filled with `0` |
 | `read8(address)` | Reads one byte |
 | `write8(address, value)` | Writes one byte |
+| `read16(address)` | Reads 2 bytes starting at `address` (little-endian), returns a `Word` |
+| `write16(address, value)` | Writes a `Word` as 2 bytes starting at `address` (little-endian) |
 | `read32(address)` | Reads 4 bytes starting at `address` (little-endian) |
 | `write32(address, value)` | Writes 4 bytes starting at `address` (little-endian) |
 | `reset()` | Sets every byte back to `0` |
 | `size()` | Returns the size in bytes (262,144) |
 
-There is no alignment requirement: `read32`/`write32` work at any address as long as all 4 bytes are inside the memory.
+There is no alignment requirement: `read16`/`write16` and `read32`/`write32` work at any address as long as all bytes are inside the memory.
+
+| Access width | Used by |
+|--------------|---------|
+| 16 bit (`read16`/`write16`) | `LOAD` and `STORE` |
+| 32 bit (`read32`) | instruction fetch in `CPU::step()` |
 
 ## Little-endian layout
 
@@ -49,6 +56,18 @@ flowchart LR
 
 `read32(0x100)` reassembles the bytes in the same order and returns `0x12345678`.
 
+16-bit accesses follow the same rule:
+
+```cpp
+memory.write16(0x20000, 0x1234);
+```
+
+| Address | `0x20000` | `0x20001` |
+|---------|-----------|-----------|
+| Byte    | `0x34`    | `0x12`    |
+
+`read16(0x20000)` returns `0x1234`.
+
 ## Bounds checking
 
 Every access is checked by the private helper `checkRange(address, size)` **before** any byte is read or written:
@@ -70,15 +89,17 @@ flowchart TD
 
 - The first condition rejects addresses outside the memory. It also prevents the unsigned underflow that `kMemorySize - address` would cause for large addresses such as `0xFFFFFFFF`.
 - The second condition rejects multi-byte accesses that start inside but end outside the memory.
-- Because the check runs first, a failing `write32` never writes part of the value.
+- Because the check runs first, a failing `write16` or `write32` never writes part of the value.
 
 | Access | Result |
 |--------|--------|
 | `write8(0x3FFFF, …)` | OK (last byte) |
 | `write8(0x40000, …)` | throws |
 | `write8(0xFFFFFFFF, …)` | throws |
+| `write16(0x3FFFE, …)` | OK (ends at the last byte) |
+| `write16(0x3FFFF, …)` | throws, memory unchanged |
 | `write32(0x3FFFC, …)` | OK (ends at the last byte) |
 | `write32(0x3FFFD, …)` | throws, memory unchanged |
-| `read8` / `read32` | same rules as the writes |
+| `read8` / `read16` / `read32` | same rules as the writes |
 
 Addresses never wrap around. An out-of-range access is always an error.

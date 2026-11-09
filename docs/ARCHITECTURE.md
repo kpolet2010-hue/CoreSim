@@ -81,6 +81,8 @@ classDiagram
     class Memory {
         +read8(address) uint8
         +write8(address, value)
+        +read16(address) Word
+        +write16(address, value)
         +read32(address) uint32
         +write32(address, value)
         +reset()
@@ -153,7 +155,7 @@ flowchart LR
 | 4. Decode | `decoder_.decode(instruction)` |
 | 5. Execute | `switch` on `Opcode` |
 
-Only 19 opcodes are executed so far. All others are decoded but do nothing:
+Only 21 opcodes are executed so far. All others are decoded but do nothing:
 
 | Opcode | Effect |
 |--------|--------|
@@ -176,8 +178,12 @@ Only 19 opcodes are executed so far. All others are decoded but do nothing:
 | `JNZ` (`0xC2`) | `PC = address` if Z is clear |
 | `JN` (`0xC3`) | `PC = address` if N is set |
 | `JC` (`0xC4`) | `PC = address` if C is set |
+| `LOAD` (`0x80`) | `R[rd] = read16(ea)` |
+| `STORE` (`0x81`) | `write16(ea, R[rd])`, the `rd` field holds the value register |
 
 `step()` has already advanced the PC by 4 before the jump runs. A taken jump overwrites it with the target, a jump that is not taken does nothing, so the CPU continues with the next instruction. Jumps do not change registers or flags.
+
+`LOAD` and `STORE` compute the effective address `ea = (DBR << 16) | ((R[rs1] + offset) & 0xFFFF)`, so an access stays inside the 64 KB bank selected by DBR (see [ISA.md](ISA.md#memory-addressing)). They do not change the flags. An access at `0x3FFFF` throws `std::out_of_range` from `Memory`.
 
 ```cpp
 Memory memory;
