@@ -776,4 +776,44 @@ void CpuTests::runTests() {
     cpu.step();
     check(throwsOutOfRange([&] { cpu.step(); }), "STORE: 2 bytes at 0x3FFFF throw out_of_range");
     check(memory.read8(0x3FFFF) == 0x5C, "STORE: failed store leaves memory unchanged");
+
+    // PUSH: the first push after reset wraps SP from 0x00000 to 0x3FFFE
+    cpu.reset();
+    memory.write32(0x0000, 0x40101234);                     // MOVI R1, 0x1234
+    memory.write32(0x0004, 0x0A010000);                     // PUSH R1
+    memory.write32(0x0008, 0x4020ABCD);                     // MOVI R2, 0xABCD
+    memory.write32(0x000C, 0x0A020000);                     // PUSH R2
+
+    cpu.step();
+    cpu.state().setFlag(kFlagZ, true);
+    cpu.state().setFlag(kFlagC, true);
+    cpu.step();
+    check(cpu.state().sp() == 0x3FFFE, "PUSH: SP = 0x00000 - 2 wraps to 0x3FFFE");
+    check(memory.read8(0x3FFFE) == 0x34, "PUSH: low byte 0x34 at 0x3FFFE");
+    check(memory.read8(0x3FFFF) == 0x12, "PUSH: high byte 0x12 at 0x3FFFF");
+    check(cpu.registers().get(1) == 0x1234, "PUSH: R1 unchanged");
+    check(cpu.state().flags() == (kFlagZ | kFlagC), "PUSH: flags unchanged");
+    check(cpu.state().pc() == 0x0008, "PUSH: PC advances to 0x0008");
+
+    // PUSH: a second push lies below the first one
+    cpu.step();
+    cpu.step();
+    check(cpu.state().sp() == 0x3FFFC, "PUSH: second push, SP = 0x3FFFC");
+    check(memory.read16(0x3FFFC) == 0xABCD, "PUSH: R2 = 0xABCD at 0x3FFFC");
+    check(memory.read16(0x3FFFE) == 0x1234, "PUSH: first value still at 0x3FFFE");
+
+    // PUSH from a set SP, the rd field and DBR are ignored
+    cpu.reset();
+    cpu.state().setSp(0x00100);
+    cpu.state().setDbr(2);
+    memory.write32(0x0000, 0x40105555);                     // MOVI R1, 0x5555
+    memory.write32(0x0004, 0x40306666);                     // MOVI R3, 0x6666
+    memory.write32(0x0008, 0x0A310000);                     // PUSH R1 with rd field = 3
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.state().sp() == 0x000FE, "PUSH: SP = 0x00100 - 2 = 0x000FE");
+    check(memory.read16(0x000FE) == 0x5555, "PUSH: pushes R[rs1], ignores the rd field");
+    check(memory.read16(0x200FE) != 0x5555, "PUSH: DBR is not used");
 }
