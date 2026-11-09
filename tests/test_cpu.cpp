@@ -3,11 +3,15 @@
 #include "coresim/CPU.h"
 #include "coresim/Memory.h"
 
+#include <iostream>
+#include <sstream>
+
 using namespace coresim;
 
 void CpuTests::runTests() {
     Memory memory;
-    CPU cpu(memory);
+    std::ostringstream output;                              // captures OUT, keeps the console clean
+    CPU cpu(memory, output);
 
     cpu.registers().set(15, 0xBEEF);
     check(cpu.registers().get(15) == 0xBEEF, "register set/get");
@@ -983,4 +987,52 @@ void CpuTests::runTests() {
     check(throwsOutOfRange([&] { cpu.step(); }), "RET: 4 bytes at 0x3FFFD throw out_of_range");
     check(cpu.state().pc() == 0x00004, "RET: failed return keeps PC");
     check(cpu.state().sp() == 0x3FFFD, "RET: failed return keeps SP");
+
+    // OUT writes R[rs1] as a decimal number and a newline, keeps registers and flags
+    cpu.reset();
+    output.str("");
+    memory.write32(0x0000, 0x40100041);                     // MOVI R1, 0x0041
+    memory.write32(0x0004, 0x0F010000);                     // OUT R1
+
+    cpu.step();
+    cpu.state().setFlag(kFlagZ, true);
+    cpu.state().setFlag(kFlagC, true);
+    cpu.step();
+    check(output.str() == "65\n", "OUT: R1 = 0x0041 prints \"65\\n\"");
+    check(cpu.registers().get(1) == 0x0041, "OUT: R1 unchanged");
+    check(cpu.state().flags() == (kFlagZ | kFlagC), "OUT: flags unchanged");
+    check(cpu.state().pc() == 0x0008, "OUT: PC advances to 0x0008");
+
+    // OUT prints unsigned numbers, several OUTs append lines
+    cpu.reset();
+    output.str("");
+    memory.write32(0x0000, 0x40208000);                     // MOVI R2, 0x8000
+    memory.write32(0x0004, 0x4030FFFF);                     // MOVI R3, 0xFFFF
+    memory.write32(0x0008, 0x0F000000);                     // OUT R0
+    memory.write32(0x000C, 0x0F020000);                     // OUT R2
+    memory.write32(0x0010, 0x0F030000);                     // OUT R3
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(output.str() == "0\n32768\n65535\n", "OUT: prints 0, 32768 and 65535 on separate lines");
+
+    // OUT reads rs1, the rd field is ignored
+    cpu.reset();
+    output.str("");
+    memory.write32(0x0000, 0x40100007);                     // MOVI R1, 7
+    memory.write32(0x0004, 0x40300009);                     // MOVI R3, 9
+    memory.write32(0x0008, 0x0F310000);                     // OUT R1 with rd field = 3
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(output.str() == "7\n", "OUT: prints R[rs1], ignores the rd field");
+
+    // without a stream, the CPU writes to std::cout
+    Memory defaultMemory;
+    CPU defaultCpu(defaultMemory);
+    check(&defaultCpu.output() == &std::cout, "OUT: default output is std::cout");
 }
