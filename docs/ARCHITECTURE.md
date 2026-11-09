@@ -30,7 +30,7 @@ flowchart LR
 | `DecodedInstruction` | `DecodedInstruction.h` | Result of decoding (plain struct) |
 | `Opcode` | `Opcode.h` | Names and values of the 26 opcodes (`enum class`) → [ISA.md](ISA.md) |
 | `ALU` | `ALU.h` | Calculates results and flags of the ALU instructions, see [ALU](#alu) |
-| `CPU` | `CPU.h` | Groups registers, state, decoder, ALU and memory; `step()` fetches, decodes and executes one instruction |
+| `CPU` | `CPU.h` | Groups registers, state, decoder, ALU and memory; `step()` fetches, decodes and executes one instruction, `run()` repeats it until `HLT` |
 
 ## Shared types
 
@@ -54,6 +54,7 @@ classDiagram
     class CPU {
         +CPU(Memory& memory, std::ostream& output = std::cout)
         +step()
+        +run(maxSteps) bool
         +reset()
         +halted() bool
         +memory() Memory&
@@ -216,6 +217,28 @@ cpu.step();   // nothing happens, PC stays 0x0008
 ```
 
 The full behaviour of every instruction is specified in [ISA.md](ISA.md).
+
+### Running a program
+
+`CPU::run(maxSteps)` calls `step()` until the CPU halts or `maxSteps` instructions have been executed. It returns `halted()`:
+
+| Return value | Meaning |
+|--------------|---------|
+| `true` | the program reached `HLT` |
+| `false` | `maxSteps` was reached first, e.g. in an endless loop |
+
+The limit makes sure that a program without `HLT` cannot hang the caller. `run(0)` executes nothing, and `run()` on a halted CPU returns `true` at once. After `false`, `run()` can be called again to continue where it stopped.
+
+```cpp
+memory.write32(0x0000, 0x40100003);   // MOVI R1, 3
+memory.write32(0x0004, 0x0F010000);   // loop: OUT R1
+memory.write32(0x0008, 0x4111FFFF);   //       ADDI R1, R1, -1
+memory.write32(0x000C, 0xC2000004);   //       JNZ loop
+memory.write32(0x0010, 0x0E000000);   // HLT
+
+CPU cpu(memory);
+bool halted = cpu.run(1000);   // prints 3, 2 and 1, halted == true
+```
 
 ## ALU
 

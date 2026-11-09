@@ -26,9 +26,9 @@ CoreSim is an emulator for a custom 16-bit CPU (**CoreSim-16**), written in C++1
 | Instruction decoder (`Decoder`) | ✅ R, I, M and J format, selected by the top 2 opcode bits | [DECODER.md](docs/DECODER.md) |
 | Instruction set (`Opcode`) | ✅ 26 opcodes with values in their format ranges | [ISA.md](docs/ISA.md) |
 | ALU (`ALU`) | ✅ `ADD`, `ADDI`, `SUB`, `MUL`, `DIV`, `CMP`, `AND`, `OR`, `XOR`, `NOT` with Z, N, C, V, independent of the CPU | [ARCHITECTURE.md](docs/ARCHITECTURE.md#alu) |
-| CPU (`CPU`) | ✅ Owns registers, state, decoder and ALU, references memory and an output stream, `reset()`, `step()` (fetch, decode and all 26 instructions) | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| CPU (`CPU`) | ✅ Owns registers, state, decoder and ALU, references memory and an output stream, `reset()`, `step()` (fetch, decode and all 26 instructions), `run()` until `HLT` | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 
-`CPU::step()` fetches, decodes and executes one instruction. All 26 opcodes specified in [ISA.md](docs/ISA.md) are implemented. `OUT` writes to `std::cout` unless another stream is passed to the CPU.
+`CPU::step()` fetches, decodes and executes one instruction. All 26 opcodes specified in [ISA.md](docs/ISA.md) are implemented. `OUT` writes to `std::cout` unless another stream is passed to the CPU. `CPU::run(maxSteps)` executes a whole program until `HLT`, with a step limit against endless loops.
 
 ## Building
 
