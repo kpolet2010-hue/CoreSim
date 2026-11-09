@@ -149,4 +149,16 @@ namespace coresim {
         return (static_cast<Address>(state_.dbr()) << 16) | offsetInBank;
     }
 
+    bool CPU::run(std::size_t maxSteps) {
+        std::size_t i = 0;
+
+        while(i < maxSteps && !halted()) {
+            step();
+            ++i;
+        }
+        
+        return halted();
+    }
+
+
 } // namespace coresim
