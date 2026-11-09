@@ -16,6 +16,7 @@ namespace coresim {
 
             void reset();
             void step();
+            bool run(std::size_t maxSteps);
             bool halted() const { return halted_; }
             Memory& memory() { return memory_; }
             std::ostream& output() { return output_; }
