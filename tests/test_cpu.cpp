@@ -624,4 +624,73 @@ void CpuTests::runTests() {
     cpu.step();
     check(cpu.state().pc() == 0x0010, "JC: C clear, continues at 0x00010");
     check(cpu.state().flags() == kFlagZ, "JC: flags unchanged when not taken");
+
+    // LOAD reads 16 bits at R[rs1] + offset and keeps the flags
+    cpu.reset();
+    memory.write16(0x01008, 0x1234);
+    memory.write32(0x0000, 0x40101000);                     // MOVI R1, 0x1000
+    memory.write32(0x0004, 0x80310008);                     // LOAD R3, [R1 + 8]
+
+    cpu.step();
+    cpu.state().setFlag(kFlagZ, true);
+    cpu.state().setFlag(kFlagC, true);
+    cpu.step();
+    check(cpu.registers().get(3) == 0x1234, "LOAD: R3 = 0x1234 from 0x01008");
+    check(cpu.registers().get(1) == 0x1000, "LOAD: R1 unchanged");
+    check(cpu.state().flags() == (kFlagZ | kFlagC), "LOAD: flags unchanged");
+    check(cpu.state().pc() == 0x0008, "LOAD: PC advances to 0x0008");
+
+    // LOAD: negative offset, DBR selects bank 2
+    cpu.reset();
+    cpu.state().setDbr(2);
+    memory.write16(0x20FFC, 0xBEEF);
+    memory.write32(0x0000, 0x40101000);                     // MOVI R1, 0x1000
+    memory.write32(0x0004, 0x8031FFFC);                     // LOAD R3, [R1 - 4]
+
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(3) == 0xBEEF, "LOAD: DBR 2, 0x1000 - 4 reads 0x20FFC");
+
+    // LOAD: R[rs1] + offset wraps inside the bank, it does not move into bank 3
+    cpu.reset();
+    cpu.state().setDbr(2);
+    memory.write16(0x20010, 0xCAFE);
+    memory.write16(0x30010, 0x0BAD);
+    memory.write32(0x0000, 0x4010FFF0);                     // MOVI R1, 0xFFF0
+    memory.write32(0x0004, 0x80310020);                     // LOAD R3, [R1 + 0x20]
+
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(3) == 0xCAFE, "LOAD: DBR 2, 0xFFF0 + 0x20 wraps to 0x20010");
+
+    // LOAD: negative offset below 0 wraps to the top of the bank
+    cpu.reset();
+    cpu.state().setDbr(1);
+    memory.write16(0x1FFFE, 0x5A5A);
+    memory.write32(0x0000, 0x8030FFFE);                     // LOAD R3, [R0 - 2]
+
+    cpu.step();
+    check(cpu.registers().get(3) == 0x5A5A, "LOAD: DBR 1, 0 - 2 wraps to 0x1FFFE");
+
+    // LOAD: destination equals base register
+    cpu.reset();
+    memory.write16(0x00200, 0x7777);
+    memory.write32(0x0000, 0x40100200);                     // MOVI R1, 0x0200
+    memory.write32(0x0004, 0x80110000);                     // LOAD R1, [R1 + 0]
+
+    cpu.step();
+    cpu.step();
+    check(cpu.registers().get(1) == 0x7777, "LOAD: R1 = [R1] (rd equals rs1)");
+
+    // LOAD at 0x3FFFF does not fit into memory: throws, rd unchanged
+    cpu.reset();
+    cpu.state().setDbr(3);
+    memory.write32(0x0000, 0x4010FFFF);                     // MOVI R1, 0xFFFF
+    memory.write32(0x0004, 0x40301234);                     // MOVI R3, 0x1234
+    memory.write32(0x0008, 0x80310000);                     // LOAD R3, [R1 + 0]
+
+    cpu.step();
+    cpu.step();
+    check(throwsOutOfRange([&] { cpu.step(); }), "LOAD: 2 bytes at 0x3FFFF throw out_of_range");
+    check(cpu.registers().get(3) == 0x1234, "LOAD: failed load keeps R3");
 }
