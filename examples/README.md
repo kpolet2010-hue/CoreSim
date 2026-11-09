@@ -1,6 +1,6 @@
 # Examples
 
-There are no example programs yet. The CPU only executes `NOP`, `HLT`, `MOV`, `MOVI`, `ADD`, `ADDI`, `SUB` and `CMP` so far.
+There are no example programs yet. The CPU only executes `NOP`, `HLT`, `MOV`, `MOVI`, the ALU instructions and the jumps `JMP`, `JZ`, `JNZ`, `JN` and `JC` so far. `LOAD`, `STORE`, the stack instructions and `OUT` are still missing.
 
 What can be tried today:
 

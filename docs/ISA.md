@@ -18,7 +18,8 @@ The sections [Operands](#operands) to [Stack operations](#stack-operations) spec
 | `NOP`, `HLT`, `MOV`, `MOVI` | ✅ executed |
 | `ADD`, `ADDI`, `SUB`, `MUL`, `DIV`, `CMP`, `AND`, `OR`, `XOR`, `NOT` | ✅ executed, calculated by `ALU` |
 | Flag updates of the ALU instructions | ✅ calculated by `ALU::execute()`, stored by `CPU::step()` |
-| All other 12 opcodes | ❌ decoded, but `step()` does nothing |
+| `JMP`, `JZ`, `JNZ`, `JN`, `JC` | ✅ executed, a taken jump sets the PC in `CPU::step()` |
+| All other 7 opcodes (`LOAD`, `STORE`, `PUSH`, `POP`, `CALL`, `RET`, `OUT`) | ❌ decoded, but `step()` does nothing |
 | `Memory::read16()`/`write16()`, `OUT` stream | ❌ not implemented |
 
 ## Opcode space
@@ -230,7 +231,7 @@ All ALU instructions update **all four** flags. All other instructions leave the
 
 ## Execution cycle and jumps
 
-> **ISA specification, partly implemented.** Steps 1–4 below are implemented in `CPU::step()`, step 5 for `NOP`, `HLT`, `MOV`, `MOVI` and the ALU instructions. Jumps are not implemented yet.
+> **ISA specification, partly implemented.** Steps 1–4 below are implemented in `CPU::step()`, step 5 for `NOP`, `HLT`, `MOV`, `MOVI`, the ALU instructions and the jumps `JMP`, `JZ`, `JNZ`, `JN` and `JC`. `CALL` is not implemented yet.
 
 ### One step
 
@@ -467,4 +468,4 @@ DecodedInstruction d = Decoder().decode(instr);
 
 `tests/test_alu.cpp` (suite `ALU`) checks the result and all four flags of every ALU operation without a CPU.
 
-`tests/test_cpu.cpp` (suite `CPU`) checks the implemented part of `step()`: fetch into IR, PC + 4, `NOP`, `HLT`, `MOV`, `MOVI`, the ALU instructions with their flags, the halted state and `reset()`. The remaining behaviour will be tested together with its implementation. See [TESTING.md](TESTING.md).
+`tests/test_cpu.cpp` (suite `CPU`) checks the implemented part of `step()`: fetch into IR, PC + 4, `NOP`, `HLT`, `MOV`, `MOVI`, the ALU instructions with their flags, the jumps `JMP`, `JZ`, `JNZ`, `JN` and `JC` (taken and not taken), the halted state and `reset()`. The remaining behaviour will be tested together with its implementation. See [TESTING.md](TESTING.md).
