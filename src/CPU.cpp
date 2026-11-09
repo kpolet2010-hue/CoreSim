@@ -65,6 +65,9 @@ namespace coresim {
         case Opcode::NOT:
             executeAlu(AluOp::NOT, decoded);
             break;
+        case Opcode::JMP:
+            state_.setPc(decoded.address);
+            break;
         default:
             break;
         }
