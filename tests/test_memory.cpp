@@ -38,6 +38,41 @@ void MemoryTests::runTests() {
 
       check(memory.read8(kMemorySize - 3) == 0x00,
             "failed write32 leaves memory unchanged");
+
+      // 16-bit accesses, little-endian
+      memory.write8(0x1FFFF, 0xAA);
+      memory.write8(0x20002, 0xBB);
+      memory.write16(0x20000, 0x1234);
+      check(memory.read8(0x20000) == 0x34, "write16 stores the low byte first");
+      check(memory.read8(0x20001) == 0x12, "write16 stores the high byte second");
+      check(memory.read16(0x20000) == 0x1234, "read16 round-trips");
+      check(memory.read8(0x1FFFF) == 0xAA, "write16 keeps the byte before");
+      check(memory.read8(0x20002) == 0xBB, "write16 keeps the byte after");
+
+      memory.write8(0x300, 0xCD);
+      memory.write8(0x301, 0xAB);
+      check(memory.read16(0x300) == 0xABCD, "read16 assembles two bytes written by write8");
+
+      memory.write16(0x401, 0xBEEF);
+      check(memory.read16(0x401) == 0xBEEF, "write16/read16 at an odd address");
+
+      memory.write16(0x500, 0xFFFF);
+      check(memory.read16(0x500) == 0xFFFF, "read16 returns the full 16-bit range");
+
+      // 16-bit out-of-bounds accesses
+      check(!throwsOutOfRange([&] { memory.write16(kMemorySize - 2, 0x1122); }),
+            "write16 ending at last byte is allowed");
+      check(throwsOutOfRange([&] { memory.write16(kMemorySize - 1, 0x1122); }),
+            "write16 crossing end throws");
+      check(!throwsOutOfRange([&] { memory.read16(kMemorySize - 2); }),
+            "read16 ending at last byte is allowed");
+      check(throwsOutOfRange([&] { memory.read16(kMemorySize - 1); }),
+            "read16 crossing end throws");
+
+      memory.write8(kMemorySize - 1, 0x00);
+      throwsOutOfRange([&] { memory.write16(kMemorySize - 1, 0xDEAD); });
+      check(memory.read8(kMemorySize - 1) == 0x00,
+            "failed write16 leaves memory unchanged");
 }
 
 
