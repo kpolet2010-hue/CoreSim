@@ -929,4 +929,58 @@ void CpuTests::runTests() {
 
     check(throwsOutOfRange([&] { cpu.step(); }), "CALL: 4 bytes at 0x3FFFF throw out_of_range");
     check(cpu.state().pc() == 0x00004, "CALL: failed call does not jump");
+
+    // RET returns to the instruction after the CALL (example from ISA.md)
+    cpu.reset();
+    cpu.state().setPc(0x00010);
+    memory.write32(0x0010, 0xC5000100);                     // CALL 0x00100
+    memory.write32(0x0014, 0x40200007);                     // MOVI R2, 7
+    memory.write32(0x0100, 0x0C000000);                     // RET
+
+    cpu.step();
+    cpu.state().setFlag(kFlagZ, true);
+    cpu.state().setFlag(kFlagC, true);
+    cpu.step();
+    check(cpu.state().pc() == 0x00014, "RET: PC = return address 0x00014");
+    check(cpu.state().sp() == 0x00000, "RET: SP = 0x3FFFC + 4 wraps to 0x00000");
+    check(cpu.state().flags() == (kFlagZ | kFlagC), "RET: flags unchanged");
+
+    cpu.step();
+    check(cpu.registers().get(2) == 7, "RET: execution continues after the CALL");
+
+    // nested CALL and RET return in reverse order
+    cpu.reset();
+    cpu.state().setSp(0x00200);
+    memory.write32(0x0000, 0xC5000100);                     // CALL 0x00100
+    memory.write32(0x0100, 0xC5000180);                     // CALL 0x00180
+    memory.write32(0x0104, 0x0C000000);                     // RET
+    memory.write32(0x0180, 0x0C000000);                     // RET
+
+    cpu.step();
+    cpu.step();
+    cpu.step();
+    check(cpu.state().pc() == 0x00104, "RET nested: inner RET returns to 0x00104");
+    check(cpu.state().sp() == 0x001FC, "RET nested: SP = 0x001FC after the inner RET");
+    cpu.step();
+    check(cpu.state().pc() == 0x00004, "RET nested: outer RET returns to 0x00004");
+    check(cpu.state().sp() == 0x00200, "RET nested: SP back to 0x00200");
+
+    // RET keeps only the lower 18 bits of the stored value
+    cpu.reset();
+    cpu.state().setSp(0x00300);
+    memory.write32(0x00300, 0xFFFC0040);
+    memory.write32(0x0000, 0x0C000000);                     // RET
+
+    cpu.step();
+    check(cpu.state().pc() == 0x00040, "RET: 0xFFFC0040 is masked to PC = 0x00040");
+    check(cpu.state().sp() == 0x00304, "RET: SP = 0x00300 + 4 = 0x00304");
+
+    // RET whose stack slot does not fit into memory throws, PC and SP unchanged
+    cpu.reset();
+    cpu.state().setSp(0x3FFFD);
+    memory.write32(0x0000, 0x0C000000);                     // RET
+
+    check(throwsOutOfRange([&] { cpu.step(); }), "RET: 4 bytes at 0x3FFFD throw out_of_range");
+    check(cpu.state().pc() == 0x00004, "RET: failed return keeps PC");
+    check(cpu.state().sp() == 0x3FFFD, "RET: failed return keeps SP");
 }
