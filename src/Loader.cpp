@@ -1,6 +1,7 @@
 #include "coresim/Loader.h"
 
 #include <string>
+#include <cstdint>
 
 namespace coresim {
 
@@ -20,10 +21,14 @@ namespace coresim {
             }
             std::size_t last = line.find_last_not_of(" \t\r");
             std::string text = line.substr(first, last - first + 1);
+            if (text.rfind("0x", 0) == 0 || text.rfind("0X", 0) == 0) {
+
+            }
+            std::uint32_t value = static_cast<std::uint32_t>(std::stoul(text, nullptr, 16));
+            memory.write32((count * 4) ,value);
             ++count;
         }
 
-        (void)memory;
         return count;
     }
 
