@@ -93,6 +93,13 @@ namespace coresim {
             memory_.write16(state_.sp(), registers_.get(decoded.rs1));
             break;
         }
+        case Opcode::POP: {
+            registers_.set(decoded.rd, memory_.read16( state_.sp() ));
+            Address sp = state_.sp();
+            sp = sp + 2;
+            state_.setSp(sp);
+            break;
+        }
         default:
             break;
         }
