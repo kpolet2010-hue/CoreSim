@@ -100,6 +100,14 @@ namespace coresim {
             state_.setSp(sp);
             break;
         }
+        case Opcode::CALL: {
+            Address sp = state_.sp();
+            sp = sp - 4;
+            state_.setSp(sp);
+            memory_.write32(state_.sp(), state_.pc());
+            state_.setPc(decoded.address);
+            break;
+        }
         default:
             break;
         }
