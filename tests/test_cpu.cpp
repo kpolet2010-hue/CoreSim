@@ -880,4 +880,53 @@ void CpuTests::runTests() {
     check(throwsOutOfRange([&] { cpu.step(); }), "POP: 2 bytes at 0x3FFFF throw out_of_range");
     check(cpu.registers().get(4) == 0x1234, "POP: failed pop keeps R4");
     check(cpu.state().sp() == 0x3FFFF, "POP: failed pop keeps SP");
+
+    // CALL saves the return address on the stack and jumps (example from ISA.md)
+    cpu.reset();
+    cpu.state().setPc(0x00010);
+    memory.write32(0x0010, 0xC5000100);                     // CALL 0x00100
+    memory.write32(0x0014, 0x40300BAD);                     // MOVI R3, 0x0BAD, skipped
+    memory.write32(0x0100, 0x40200007);                     // MOVI R2, 7
+    cpu.state().setFlag(kFlagZ, true);
+    cpu.state().setFlag(kFlagC, true);
+
+    cpu.step();
+    check(cpu.state().pc() == 0x00100, "CALL: PC = 0x00100");
+    check(cpu.state().sp() == 0x3FFFC, "CALL: SP = 0x00000 - 4 wraps to 0x3FFFC");
+    check(memory.read32(0x3FFFC) == 0x00014, "CALL: return address 0x00014 at 0x3FFFC");
+    check(cpu.state().flags() == (kFlagZ | kFlagC), "CALL: flags unchanged");
+
+    cpu.step();
+    check(cpu.registers().get(2) == 7, "CALL: instruction at the target is executed");
+    check(cpu.registers().get(3) == 0, "CALL: instruction after the call is skipped");
+
+    // CALL ignores the unused bits and DBR
+    cpu.reset();
+    cpu.state().setDbr(2);
+    memory.write32(0x0000, 0xC5FC0100);                     // CALL 0x00100, unused bits set
+
+    cpu.step();
+    check(cpu.state().pc() == 0x00100, "CALL: unused bits are ignored, PC = 0x00100");
+    check(memory.read32(0x3FFFC) == 0x00004, "CALL: DBR is not used for the stack");
+
+    // nested CALLs stack their return addresses
+    cpu.reset();
+    cpu.state().setSp(0x00200);
+    memory.write32(0x0000, 0xC5000100);                     // CALL 0x00100
+    memory.write32(0x0100, 0xC5000180);                     // CALL 0x00180
+
+    cpu.step();
+    cpu.step();
+    check(cpu.state().pc() == 0x00180, "CALL nested: PC = 0x00180");
+    check(cpu.state().sp() == 0x001F8, "CALL nested: SP = 0x00200 - 8 = 0x001F8");
+    check(memory.read32(0x001FC) == 0x00004, "CALL nested: first return address 0x00004 at 0x001FC");
+    check(memory.read32(0x001F8) == 0x00104, "CALL nested: second return address 0x00104 at 0x001F8");
+
+    // CALL whose stack slot does not fit into memory throws and does not jump
+    cpu.reset();
+    cpu.state().setSp(0x00003);
+    memory.write32(0x0000, 0xC5000100);                     // CALL 0x00100, slot at 0x3FFFF
+
+    check(throwsOutOfRange([&] { cpu.step(); }), "CALL: 4 bytes at 0x3FFFF throw out_of_range");
+    check(cpu.state().pc() == 0x00004, "CALL: failed call does not jump");
 }
