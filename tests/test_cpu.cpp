@@ -444,4 +444,49 @@ void CpuTests::runTests() {
     check(cpu.state().flags() == kept, "NOP keeps the flags");
     cpu.step();
     check(cpu.state().flags() == kept, "HLT keeps the flags");
+
+    // JMP sets PC to the target, skips the next instruction and keeps registers and flags
+    cpu.reset();
+    memory.write32(0x0000, 0x40100005);                     // MOVI R1, 5
+    memory.write32(0x0004, 0xC0000100);                     // JMP 0x00100
+    memory.write32(0x0008, 0x40100BAD);                     // MOVI R1, 0x0BAD, skipped
+    memory.write32(0x0100, 0x40200007);                     // MOVI R2, 7
+
+    cpu.step();
+    cpu.state().setFlag(kFlagZ, true);
+    cpu.state().setFlag(kFlagC, true);
+
+    cpu.step();
+    check(cpu.state().ir() == 0xC0000100, "JMP: IR holds the jump");
+    check(cpu.state().pc() == 0x0100, "JMP: PC = 0x00100");
+    check(cpu.registers().get(1) == 5, "JMP: R1 unchanged");
+    check(cpu.state().flags() == (kFlagZ | kFlagC), "JMP: flags unchanged");
+
+    cpu.step();
+    check(cpu.registers().get(2) == 7, "JMP: instruction at the target is executed");
+    check(cpu.registers().get(1) == 5, "JMP: instruction after the jump is skipped");
+    check(cpu.state().pc() == 0x0104, "JMP: PC continues after the target");
+
+    // JMP ignores the 6 unused bits between opcode and address
+    cpu.reset();
+    memory.write32(0x0000, 0xC0FC0100);                     // JMP 0x00100, unused bits set
+
+    cpu.step();
+    check(cpu.state().pc() == 0x0100, "JMP: unused bits are ignored, PC = 0x00100");
+
+    // JMP reaches the highest 4-byte aligned address
+    cpu.reset();
+    memory.write32(0x0000, 0xC003FFFC);                     // JMP 0x3FFFC
+
+    cpu.step();
+    check(cpu.state().pc() == 0x3FFFC, "JMP: PC = 0x3FFFC (full 18-bit address)");
+
+    // JMP to its own address loops forever
+    cpu.reset();
+    memory.write32(0x0000, 0xC0000000);                     // JMP 0x00000
+
+    cpu.step();
+    check(cpu.state().pc() == 0x0000, "JMP to itself: PC = 0x00000");
+    cpu.step();
+    check(cpu.state().pc() == 0x0000, "JMP to itself: PC stays 0x00000");
 }
