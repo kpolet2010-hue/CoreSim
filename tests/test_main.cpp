@@ -6,6 +6,7 @@
 #include "test_decoder.h"
 #include "test_isa.h"
 #include "test_loader.h"
+#include "test_examples.h"
 #include <iostream>
 
 int main() {
@@ -20,6 +21,7 @@ int main() {
     failures += DecoderTests().run();
     failures += IsaTests().run();
     failures += LoaderTests().run();
+    failures += ExamplesTests().run();
     if (failures == 0) {
         std::cout << "All tests passed\n";
     }

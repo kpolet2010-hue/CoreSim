@@ -15,7 +15,7 @@ Run one from the project root:
 | [fibonacci.hex](fibonacci.hex) | prints the first 10 Fibonacci numbers | `0` `1` `1` `2` `3` `5` `8` `13` `21` `34` | `MOVI`, `OUT`, `ADD`, `MOV`, `ADDI`, `JNZ`, `HLT` |
 | [squares.hex](squares.hex) | prints the squares of 1 to 5 with a subroutine | `1` `4` `9` `16` `25` | `MOVI`, `CALL`, `RET`, `PUSH`, `POP`, `MUL`, `CMP`, `JC`, `ADDI`, `OUT`, `HLT` |
 
-Each number is printed on its own line.
+Each number is printed on its own line. The test suite `Examples` (`tests/test_examples.cpp`) runs every program and checks this output, see [TESTING.md](../docs/TESTING.md#example-programs).
 
 ## How the loops work
 
