@@ -101,6 +101,7 @@ examples/          example programs in hex text format
 - [ISA.md](docs/ISA.md) – opcodes, their values and formats
 - [TESTING.md](docs/TESTING.md) – test suites and CI
 - [LOADER.md](docs/LOADER.md) – hex text format for programs and `loadHex()`
+- [ASSEMBLER.md](docs/ASSEMBLER.md) – assembly language and assembler (specification, not implemented yet)
 
 Diagrams (open with [draw.io](https://www.drawio.com/)):
 
