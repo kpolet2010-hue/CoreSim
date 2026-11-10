@@ -3,11 +3,21 @@
 
 namespace coresim {
 
+    namespace {
+
+        std::string trim(const std::string& s) {
+            std::size_t first = s.find_first_not_of(" \t");
+            if (first == std::string::npos) {
+                return "";
+            }
+            std::size_t last = s.find_last_not_of(" \t");
+            return s.substr(first, last - first + 1);
+        }
+
+    } // namespace
+
     ParsedLine parseLine(const std::string& line) {
         ParsedLine result{};
-
-        //  3. find the mnemonic (first word after the label)
-        //  4. split the rest at ',' into operands, trim spaces and tabs
 
         std::string text = line;
         std::size_t comment = text.find(';');
@@ -26,6 +36,25 @@ namespace coresim {
         }
         std::size_t end = text.find_first_of(" \t", start);
         result.mnemonic = text.substr(start, end - start);
+
+        if (end == std::string::npos) {
+            return result;
+        }
+        std::string rest = text.substr(end);
+
+        // only spaces after the mnemonic, e.g. "HLT ; stop": no operands
+        if (trim(rest).empty()) {
+            return result;
+        }
+
+        std::size_t comma = rest.find(',');
+        while (comma != std::string::npos) {
+            result.operands.push_back(trim(rest.substr(0, comma)));
+            rest = rest.substr(comma + 1);
+            comma = rest.find(',');
+        }
+        result.operands.push_back(trim(rest));
+
         return result;
     }
 
