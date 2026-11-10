@@ -1,0 +1,16 @@
+; fibonacci.hex - prints the first 10 Fibonacci numbers (0 1 1 2 3 5 8 13 21 34)
+; run: coresim examples/fibonacci.hex
+;
+; R1 = current number, R2 = next number, R3 = counter, R4 = temporary sum
+;
+; addr   hex        assembly
+40100000 ; 0x00  MOVI R1, 0
+40200001 ; 0x04  MOVI R2, 1
+4030000A ; 0x08  MOVI R3, 10
+0F010000 ; 0x0C  loop: OUT  R1
+01412000 ; 0x10        ADD  R4, R1, R2
+00120000 ; 0x14        MOV  R1, R2
+00240000 ; 0x18        MOV  R2, R4
+4133FFFF ; 0x1C        ADDI R3, R3, -1
+C200000C ; 0x20        JNZ  loop
+0E000000 ; 0x24  HLT

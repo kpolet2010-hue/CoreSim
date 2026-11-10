@@ -1,0 +1,20 @@
+; squares.hex - prints the squares of 1 to 5 (1 4 9 16 25) with a subroutine
+; run: coresim examples/squares.hex
+;
+; R1 = n, R5 = limit, R2 = used by the subroutine and saved on the stack
+;
+; addr   hex        assembly
+40100001 ; 0x00  MOVI R1, 1
+40500006 ; 0x04  MOVI R5, 6
+C500001C ; 0x08  loop: CALL square
+41110001 ; 0x0C        ADDI R1, R1, 1
+09015000 ; 0x10        CMP  R1, R5
+C4000008 ; 0x14        JC   loop          ; while R1 < R5
+0E000000 ; 0x18  HLT
+;
+; square: prints R1 * R1, keeps R2 unchanged
+0A020000 ; 0x1C  square: PUSH R2
+03211000 ; 0x20          MUL  R2, R1, R1
+0F020000 ; 0x24          OUT  R2
+0B200000 ; 0x28          POP  R2
+0C000000 ; 0x2C          RET

@@ -1,0 +1,13 @@
+; factorial.hex - calculates 5! = 120
+; run: coresim examples/factorial.hex
+;
+; R1 = counter (5, 4, ... 1), R2 = result
+;
+; addr   hex        assembly
+40100005 ; 0x00  MOVI R1, 5
+40200001 ; 0x04  MOVI R2, 1
+03221000 ; 0x08  loop: MUL  R2, R2, R1
+4111FFFF ; 0x0C        ADDI R1, R1, -1
+C2000008 ; 0x10        JNZ  loop
+0F020000 ; 0x14  OUT R2
+0E000000 ; 0x18  HLT
