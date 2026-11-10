@@ -1,20 +1,37 @@
 # Assembler
 
-> **Specification, partly implemented.** This document defines the assembly language for CoreSim-16 and how the assembler translates it into instructions. So far only splitting a line into its parts exists, see [Implementation status](#implementation-status). Programs are currently written in the hex text format (see [LOADER.md](LOADER.md)).
+This document defines the assembly language for CoreSim-16 and how the assembler (`include/coresim/Assembler.h`, `src/Assembler.cpp`) translates it into instructions. Everything in it is implemented.
 
 ## Implementation status
 
 | Part | Status |
 |------|--------|
 | Split a line into label, mnemonic and operands | ✅ `parseLine()`, see [Parsing a line](#parsing-a-line) |
-| Check mnemonics, registers and operand counts | ❌ not implemented |
-| Encode an instruction into 32 bits | ❌ not implemented |
-| Resolve labels in two passes | ❌ not implemented |
-| `coresim program.asm` | ❌ not implemented, `coresim` only runs `.hex` files |
+| Check mnemonics, registers, numbers and operand counts | ✅ `assemble()`, see [Errors](#errors) |
+| Encode an instruction into 32 bits | ✅ `assemble()`, see [Encoding](#encoding) |
+| Resolve labels in two passes | ✅ `assemble()`, see [Two passes](#two-passes) |
+| Load an assembled program into memory | ✅ `loadAsm()` |
+| `coresim program.asm` | ✅ see [Running](#running) |
+
+## Functions
+
+| Function | What it does |
+|----------|--------------|
+| `parseLine(line)` | splits one line into label, mnemonic and operands, without checking them |
+| `assemble(source)` | translates a whole program from a `std::istream` into a `std::vector<Instruction>`, the first instruction gets address `0x00000` |
+| `loadAsm(source, memory)` | assembles the program and writes it little-endian to memory from `0x00000`, returns the number of instructions |
+
+```cpp
+std::istringstream source("MOVI R1, 3\nloop: OUT R1\nADDI R1, R1, -1\nJNZ loop\nHLT\n");
+std::vector<Instruction> program = assemble(source);
+// {0x40100003, 0x0F010000, 0x4111FFFF, 0xC2000004, 0x0E000000}
+```
+
+`loadAsm()` assembles the whole program before it writes anything, so memory stays unchanged if a line has an error. This is different from `loadHex()`, which writes line by line.
 
 ## Parsing a line
 
-> **Implemented.** `parseLine()` (`include/coresim/Assembler.h`, `src/Assembler.cpp`) splits one line of source text into its parts. It does not check them yet.
+`parseLine()` splits one line of source text into its parts. It does not check them, that is done by `assemble()`.
 
 ```cpp
 ParsedLine p = parseLine("loop:   ADDI R1, R1, -1   ; count down");
@@ -32,7 +49,7 @@ ParsedLine p = parseLine("loop:   ADDI R1, R1, -1   ; count down");
 The line is processed in four steps:
 
 1. Cut off everything from `;`.
-2. If there is a `:`, the text before it is the label, the text after it is processed further.
+2. If there is a `:`, the text before it is the label (spaces and tabs around it removed), the text after it is processed further.
 3. The first word, after skipping spaces and tabs, is the mnemonic.
 4. The rest is split at `,`, and spaces and tabs around each operand are removed.
 
@@ -47,8 +64,8 @@ The line is processed in four steps:
 | `"movi r1, 0x1C"` | – | `movi` | `r1`, `0x1C` |
 
 - **Memory operands stay whole.** `[R1 + 8]` contains no `,`, so it is one operand. Its spaces are kept.
-- **Letter case is kept.** `movi` is not changed to `MOVI`; ignoring letter case is part of the checks that are not implemented yet.
-- **No checks.** `parseLine("MOVE R1, R2, R3, R4")` returns the parts without an error. Unknown mnemonics, wrong operands and invalid labels are not detected yet.
+- **Letter case is kept.** `movi` is not changed to `MOVI`; `assemble()` ignores the letter case when it looks up the mnemonic.
+- **No checks.** `parseLine("MOVE R1, R2, R3, R4")` returns the parts without an error. `assemble()` reports the unknown mnemonic.
 
 ## Why an assembler
 
@@ -79,8 +96,18 @@ C2000004
 
 | Command | What happens |
 |---------|--------------|
-| `coresim program.hex` | load with `loadHex()` and run (implemented) |
-| `coresim program.asm` | assemble, then run (specified here) |
+| `coresim program.asm` | assemble with `loadAsm()`, then run |
+| `coresim <any other file>` | load with `loadHex()`, then run |
+
+```sh
+./build/coresim examples/countdown.asm
+```
+
+An error in the program is printed with its line number, and `coresim` exits with code 1:
+
+```
+error: line 3: 'ADD' expects 3 operands, got 2
+```
 
 The assembler is its own component in `coresim_core`, independent of the CPU and the loader.
 
@@ -208,19 +235,30 @@ Like the loader, the assembler throws `std::runtime_error` with the line number,
 line 4: unknown instruction 'MOVE'
 ```
 
-| Problem | Example |
-|---------|---------|
-| unknown mnemonic | `MOVE R1, 3` |
-| wrong number of operands | `ADD R1, R2` |
-| wrong kind of operand | `ADD R1, R2, 3` (register expected) |
-| invalid register | `R16`, `RX` |
-| number out of range | `MOVI R1, 70000`, `LOAD R1, [R2 + 40000]` |
-| malformed memory operand | `LOAD R1, R2 + 4` (brackets missing) |
-| unknown label | `JNZ lop` |
-| label defined twice | `loop:` in two lines |
-| invalid label name | `1loop:`, `R1:` |
+| Problem | Example | Message |
+|---------|---------|---------|
+| unknown mnemonic | `MOVE R1, 3` | `unknown instruction 'MOVE'` |
+| wrong number of operands | `ADD R1, R2` | `'ADD' expects 3 operands, got 2` |
+| wrong kind of operand | `ADD R1, R2, 3` | `expected a register, got '3'` |
+| | `MOVI R1, R2` | `expected a number, got 'R2'` |
+| invalid register | `R16`, `RX` | `invalid register 'R16'` |
+| number out of range | `MOVI R1, 70000`, `JMP 0x40000` | `number out of range '70000'` |
+| offset out of range | `LOAD R1, [R2 + 40000]` | `offset out of range '[R2 + 40000]'` |
+| malformed memory operand | `LOAD R1, R2 + 4` (brackets missing) | `malformed memory operand 'R2 + 4'` |
+| unknown label | `JNZ lop` | `unknown label 'lop'` |
+| label defined twice | `loop:` in two lines | `label 'loop' defined twice` |
+| invalid label name | `1loop:`, `R1:`, `add:`, `:` | `invalid label name '1loop'` |
+| more than 65,536 instructions | | `program does not fit into memory` |
 
 Nothing is loaded into memory if the program contains an error.
+
+Errors are found in two passes, like the labels: pass 1 reports invalid labels, labels defined twice and unknown mnemonics, pass 2 everything about the operands. If a program has errors of both kinds, the one from pass 1 is reported even if it is further down.
+
+Details of the checks:
+
+- **Registers** are `R0` to `R15` without a leading zero, so `R01` is invalid. `R16` is no register and can therefore be a label.
+- **Labels** are reserved if they are a register or a mnemonic in any letter case, so `r1:` and `add:` are invalid.
+- **Windows line endings** (`\r\n`) are accepted.
 
 ## Not part of this specification
 

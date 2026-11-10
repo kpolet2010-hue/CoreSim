@@ -6,7 +6,7 @@ This document describes the components that exist in CoreSim today and how they 
 
 All emulator code lives in the static library `coresim_core`. The executable `coresim` (`src/main.cpp`) and the test binary `coresim_tests` link against it.
 
-`coresim` opens the hex file given as the first argument (or asks for it), loads it with `loadHex()` and runs it with `CPU::run()` and a limit of 1,000,000 steps (see [README.md](../README.md#running-a-program)).
+`coresim` opens the file given as the first argument (or asks for it), assembles it with `loadAsm()` if it ends in `.asm` or loads it with `loadHex()` otherwise, and runs it with `CPU::run()` and a limit of 1,000,000 steps (see [README.md](../README.md#running-a-program)).
 
 ```mermaid
 flowchart LR
@@ -34,7 +34,7 @@ flowchart LR
 | `ALU` | `ALU.h` | Calculates results and flags of the ALU instructions, see [ALU](#alu) |
 | `CPU` | `CPU.h` | Groups registers, state, decoder, ALU and memory; `step()` fetches, decodes and executes one instruction, `run()` repeats it until `HLT` |
 | `loadHex` | `Loader.h` | Loads a program in hex text format into memory → [LOADER.md](LOADER.md) |
-| `parseLine` | `Assembler.h` | Splits a line of assembly into label, mnemonic and operands; the first part of the assembler → [ASSEMBLER.md](ASSEMBLER.md#parsing-a-line) |
+| `assemble`, `loadAsm`, `parseLine` | `Assembler.h` | Translates assembly into instructions and loads them into memory → [ASSEMBLER.md](ASSEMBLER.md) |
 
 ## Shared types
 
@@ -294,6 +294,8 @@ Invalid accesses throw `std::out_of_range`:
 `ALU::execute()` throws `std::runtime_error` on `DIV` by zero. `CPU::step()` does not catch it.
 
 `loadHex()` throws `std::runtime_error` with the line number for a line that is not exactly 8 hex digits (see [LOADER.md](LOADER.md#errors)).
+
+`assemble()` and `loadAsm()` throw `std::runtime_error` with the line number for the first error in the program (see [ASSEMBLER.md](ASSEMBLER.md#errors)). `loadAsm()` writes nothing to memory in that case.
 
 `main()` in `src/main.cpp` catches every `std::exception` from loading and running, prints `error: <message>` to `stderr` and returns exit code 1. It does the same if the file cannot be opened or the program does not reach `HLT` within the step limit.
 

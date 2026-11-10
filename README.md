@@ -28,8 +28,8 @@ CoreSim is an emulator for a custom 16-bit CPU (**CoreSim-16**), written in C++1
 | ALU (`ALU`) | ✅ `ADD`, `ADDI`, `SUB`, `MUL`, `DIV`, `CMP`, `AND`, `OR`, `XOR`, `NOT` with Z, N, C, V, independent of the CPU | [ARCHITECTURE.md](docs/ARCHITECTURE.md#alu) |
 | CPU (`CPU`) | ✅ Owns registers, state, decoder and ALU, references memory and an output stream, `reset()`, `step()` (fetch, decode and all 26 instructions), `run()` until `HLT` | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | Program loader (`loadHex`) | ✅ Loads hex text programs with comments into memory, reports invalid lines with their line number | [LOADER.md](docs/LOADER.md) |
-| Assembler (`parseLine`) | 🚧 Splits a line of assembly into label, mnemonic and operands; checking, encoding, labels and running `.asm` files are not implemented yet | [ASSEMBLER.md](docs/ASSEMBLER.md) |
-| Command line (`coresim`) | ✅ Loads a hex file and runs it until `HLT`, reports errors with exit code 1 | [Running a program](#running-a-program) |
+| Assembler (`assemble`, `loadAsm`) | ✅ Translates assembly with labels into instructions in two passes, reports errors with their line number | [ASSEMBLER.md](docs/ASSEMBLER.md) |
+| Command line (`coresim`) | ✅ Assembles a `.asm` file or loads a hex file and runs it until `HLT`, reports errors with exit code 1 | [Running a program](#running-a-program) |
 
 `CPU::step()` fetches, decodes and executes one instruction. All 26 opcodes specified in [ISA.md](docs/ISA.md) are implemented. `OUT` writes to `std::cout` unless another stream is passed to the CPU. `CPU::run(maxSteps)` executes a whole program until `HLT`, with a step limit against endless loops.
 
@@ -45,7 +45,8 @@ cmake --build build --parallel
 ## Running a program
 
 ```sh
-./build/coresim examples/countdown.hex
+./build/coresim examples/countdown.asm     # assembly
+./build/coresim examples/countdown.hex     # hex text, same program
 ```
 
 ```
@@ -55,13 +56,14 @@ CoreSim v0.1
 1
 ```
 
-`coresim` loads the hex file given as the first argument (see [LOADER.md](docs/LOADER.md)) and runs it until `HLT`. Without an argument it asks for the file name. The values written by `OUT` appear on the console.
+`coresim` loads the file given as the first argument and runs it until `HLT`. A file ending in `.asm` is assembled (see [ASSEMBLER.md](docs/ASSEMBLER.md)), every other file is loaded as hex text (see [LOADER.md](docs/LOADER.md)). Without an argument it asks for the file name. The values written by `OUT` appear on the console.
 
 | Case | Message on stderr | Exit code |
 |------|-------------------|-----------|
 | program reaches `HLT` | – | `0` |
 | file cannot be opened | `error: could not open <file>` | `1` |
-| invalid line in the file | `error: line N: expected 8 hex digits` | `1` |
+| invalid line in a hex file | `error: line N: expected 8 hex digits` | `1` |
+| error in a `.asm` file | `error: line N: <problem>`, e.g. `error: line 3: unknown instruction 'MOVE'` | `1` |
 | no `HLT` after 1,000,000 steps | `error: no HLT after 1000000 steps` | `1` |
 | the CPU throws (e.g. `DIV` by zero) | `error: <message>` | `1` |
 
@@ -89,7 +91,7 @@ src/               implementation + main.cpp
 tests/             test suites (TestSuite base class, one suite per component)
 docs/              architecture documentation (Markdown + Mermaid)
 diagrams/          draw.io diagrams (registers & memory, data flow, decoder, ISA)
-examples/          example programs in hex text format
+examples/          example programs in assembly (.asm) and hex text format (.hex)
 .github/workflows/ CI pipeline (build + test on every push/PR to main)
 ```
 
@@ -102,7 +104,7 @@ examples/          example programs in hex text format
 - [ISA.md](docs/ISA.md) – opcodes, their values and formats
 - [TESTING.md](docs/TESTING.md) – test suites and CI
 - [LOADER.md](docs/LOADER.md) – hex text format for programs and `loadHex()`
-- [ASSEMBLER.md](docs/ASSEMBLER.md) – assembly language and assembler (specification, only the line parser is implemented)
+- [ASSEMBLER.md](docs/ASSEMBLER.md) – assembly language, `assemble()` and `loadAsm()`
 
 Diagrams (open with [draw.io](https://www.drawio.com/)):
 
