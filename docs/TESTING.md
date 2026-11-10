@@ -23,6 +23,7 @@ The test binary prints each check and a summary per suite:
 [Decoder] passed
 [Isa] passed
 [Loader] passed
+[Examples] passed
 All tests passed
 ```
 
@@ -48,6 +49,7 @@ classDiagram
     TestSuite <|-- DecoderTests
     TestSuite <|-- IsaTests
     TestSuite <|-- LoaderTests
+    TestSuite <|-- ExamplesTests
 ```
 
 | File | Purpose |
@@ -75,6 +77,18 @@ classDiagram
 | Decoder | `test_decoder.cpp` | One case per format (R `0x12345000`, I `0x4123ABCD`, M `0x8012FFFC`/`0x80120008`, J `0xC0012345`/`0xFFFFFFFF`), negative and positive offset, 18-bit address masking |
 | Isa | `test_isa.cpp` | Value of all 26 opcodes, each opcode lies in the range of its format (`opcode >> 6`), operand encoding of `STORE`, `LOAD`, `PUSH`, `POP`, `MOVI`, `CALL` and `HLT` |
 | Loader | `test_loader.cpp` | Counting instruction lines with comments, blank lines, tabs and `\r\n`, load addresses from `0x00000` in steps of 4, little-endian, lower case and the `0x`/`0X` prefix, `00000000` to `FFFFFFFF`, memory after the program is kept, a loaded countdown runs on the CPU, invalid lines (wrong digit count, non-hex characters, two values, lone `0x`) throw with the correct line number, earlier lines are already written, 65,536 instructions fit, one more throws `out_of_range` |
+| Examples | `test_examples.cpp` | Every program in `examples/` is found, loads the expected number of instructions, halts within 1,000,000 steps and prints the expected output (`countdown`, `factorial`, `fibonacci`, `squares`), a missing file is reported |
+
+### Example programs
+
+The `Examples` suite reads the files from `examples/` directly, so a change to the CPU that breaks an example also fails the tests and the CI. The path comes from CMake:
+
+```cmake
+# tests/CMakeLists.txt
+target_compile_definitions(coresim_tests PRIVATE CORESIM_EXAMPLES_DIR="${PROJECT_SOURCE_DIR}/examples")
+```
+
+`CORESIM_EXAMPLES_DIR` is the absolute path to `examples/`, so the tests find the files no matter which directory they are started from. A new example needs its own checks in `test_examples.cpp`.
 
 ## Adding a suite
 
