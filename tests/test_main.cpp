@@ -7,6 +7,7 @@
 #include "test_isa.h"
 #include "test_loader.h"
 #include "test_examples.h"
+#include "test_assembler.h"
 #include <iostream>
 
 int main() {
@@ -22,6 +23,7 @@ int main() {
     failures += IsaTests().run();
     failures += LoaderTests().run();
     failures += ExamplesTests().run();
+    failures += AssemblerTests().run();
     if (failures == 0) {
         std::cout << "All tests passed\n";
     }

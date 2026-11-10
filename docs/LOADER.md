@@ -4,7 +4,7 @@
 
 ## Why a text format
 
-There is no assembler yet. A hex text file can be written in any editor, holds one instruction per line and allows comments, so a program stays readable without extra tools.
+A hex text file can be written in any editor, holds one instruction per line and allows comments, so a program stays readable without extra tools. It is the format of the encoded instructions; programs written in assembly are translated by the assembler instead (see [ASSEMBLER.md](ASSEMBLER.md)).
 
 ## Format
 

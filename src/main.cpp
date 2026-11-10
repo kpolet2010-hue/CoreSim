@@ -1,4 +1,5 @@
 #include "coresim/Architecture.h"
+#include "coresim/Assembler.h"
 #include "coresim/CPU.h"
 #include "coresim/Loader.h"
 #include "coresim/Memory.h"
@@ -11,6 +12,13 @@
 
 namespace {
     constexpr std::size_t kMaxSteps = 1'000'000;
+
+    // .asm files are assembled, every other file is loaded as hex text
+    bool isAssembly(const std::string& path) {
+        const std::string extension = ".asm";
+        return path.size() >= extension.size()
+            && path.compare(path.size() - extension.size(), extension.size(), extension) == 0;
+    }
 } // namespace
 
 int main(int argc, char* argv[]) {
@@ -19,7 +27,7 @@ int main(int argc, char* argv[]) {
     if (argc >= 2) {
         pathToFile = argv[1];
     } else {
-        std::cout << "Hex file: ";
+        std::cout << "Program file (.hex or .asm): ";
         std::getline(std::cin, pathToFile);
     }
 
@@ -33,7 +41,11 @@ int main(int argc, char* argv[]) {
         coresim::Memory memory;
         coresim::CPU cpu(memory);
 
-        coresim::loadHex(file, memory);
+        if (isAssembly(pathToFile)) {
+            coresim::loadAsm(file, memory);
+        } else {
+            coresim::loadHex(file, memory);
+        }
         if (!cpu.run(kMaxSteps)) {
             std::cerr << "error: no HLT after " << kMaxSteps << " steps\n";
             return 1;

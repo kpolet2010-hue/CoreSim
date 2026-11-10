@@ -1,21 +1,25 @@
 # Examples
 
-Example programs in the hex text format (see [LOADER.md](../docs/LOADER.md)). Every line holds one instruction, the comment next to it shows its address and the matching assembly.
+Every example program exists twice:
 
-Run one from the project root:
+- **`.asm`** in assembly with labels (see [ASSEMBLER.md](../docs/ASSEMBLER.md)),
+- **`.hex`** in the hex text format (see [LOADER.md](../docs/LOADER.md)). Every line holds one instruction, the comment next to it shows its address and the matching assembly.
+
+Both versions contain exactly the same instructions. Run one from the project root:
 
 ```sh
+./build/coresim examples/countdown.asm
 ./build/coresim examples/countdown.hex
 ```
 
-| File | What it does | Output | Instructions used |
-|------|--------------|--------|-------------------|
-| [countdown.hex](countdown.hex) | counts down from 3 to 1 | `3` `2` `1` | `MOVI`, `OUT`, `ADDI`, `JNZ`, `HLT` |
-| [factorial.hex](factorial.hex) | calculates 5! | `120` | `MOVI`, `MUL`, `ADDI`, `JNZ`, `OUT`, `HLT` |
-| [fibonacci.hex](fibonacci.hex) | prints the first 10 Fibonacci numbers | `0` `1` `1` `2` `3` `5` `8` `13` `21` `34` | `MOVI`, `OUT`, `ADD`, `MOV`, `ADDI`, `JNZ`, `HLT` |
-| [squares.hex](squares.hex) | prints the squares of 1 to 5 with a subroutine | `1` `4` `9` `16` `25` | `MOVI`, `CALL`, `RET`, `PUSH`, `POP`, `MUL`, `CMP`, `JC`, `ADDI`, `OUT`, `HLT` |
+| Program | What it does | Output | Instructions used |
+|---------|--------------|--------|-------------------|
+| countdown ([.asm](countdown.asm), [.hex](countdown.hex)) | counts down from 3 to 1 | `3` `2` `1` | `MOVI`, `OUT`, `ADDI`, `JNZ`, `HLT` |
+| factorial ([.asm](factorial.asm), [.hex](factorial.hex)) | calculates 5! | `120` | `MOVI`, `MUL`, `ADDI`, `JNZ`, `OUT`, `HLT` |
+| fibonacci ([.asm](fibonacci.asm), [.hex](fibonacci.hex)) | prints the first 10 Fibonacci numbers | `0` `1` `1` `2` `3` `5` `8` `13` `21` `34` | `MOVI`, `OUT`, `ADD`, `MOV`, `ADDI`, `JNZ`, `HLT` |
+| squares ([.asm](squares.asm), [.hex](squares.hex)) | prints the squares of 1 to 5 with a subroutine | `1` `4` `9` `16` `25` | `MOVI`, `CALL`, `RET`, `PUSH`, `POP`, `MUL`, `CMP`, `JC`, `ADDI`, `OUT`, `HLT` |
 
-Each number is printed on its own line. The test suite `Examples` (`tests/test_examples.cpp`) runs every program and checks this output, see [TESTING.md](../docs/TESTING.md#example-programs).
+Each number is printed on its own line. The test suite `Examples` (`tests/test_examples.cpp`) runs every program, checks this output and checks that each `.asm` file assembles to exactly the instructions of its `.hex` file, see [TESTING.md](../docs/TESTING.md#example-programs).
 
 ## How the loops work
 
@@ -23,4 +27,4 @@ Each number is printed on its own line. The test suite `Examples` (`tests/test_e
 - **squares** counts up instead and compares with `CMP R1, R5`. `JC` jumps back while `R1 < R5` (borrow → C = 1).
 - **squares** calls the subroutine `square` with `CALL`, which saves the return address on the stack. The subroutine saves `R2` with `PUSH` and restores it with `POP` before `RET`.
 
-Jump targets are absolute addresses. If an instruction is added or removed, every jump target behind it has to be recalculated by hand.
+In the `.hex` files, jump targets are absolute addresses that have to be recalculated by hand when an instruction is added or removed. In the `.asm` files, the assembler calculates them from the labels.
