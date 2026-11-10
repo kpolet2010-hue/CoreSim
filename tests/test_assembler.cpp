@@ -35,6 +35,14 @@ void AssemblerTests::runTests() {
     check(hlt.mnemonic == "HLT", "parseLine: HLT mnemonic");
     check(hlt.operands.empty(), "parseLine: HLT has no operands");
 
+    ParsedLine hltComment = parseLine("HLT ; stop");
+    check(hltComment.mnemonic == "HLT", "parseLine: HLT before a comment");
+    check(hltComment.operands.empty(), "parseLine: spaces before a comment are no operand");
+
+    ParsedLine hltTrailing = parseLine("HLT \t ");
+    check(hltTrailing.mnemonic == "HLT" && hltTrailing.operands.empty(),
+          "parseLine: trailing spaces and tabs are no operand");
+
     // parseLine: operands, separated by commas
     ParsedLine addi = parseLine("ADDI R1, R1, -1");
     check(addi.mnemonic == "ADDI", "parseLine: ADDI mnemonic");
