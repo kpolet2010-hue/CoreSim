@@ -24,6 +24,7 @@ The test binary prints each check and a summary per suite:
 [Isa] passed
 [Loader] passed
 [Examples] passed
+[Assembler] passed
 All tests passed
 ```
 
@@ -50,6 +51,7 @@ classDiagram
     TestSuite <|-- IsaTests
     TestSuite <|-- LoaderTests
     TestSuite <|-- ExamplesTests
+    TestSuite <|-- AssemblerTests
 ```
 
 | File | Purpose |
@@ -78,6 +80,7 @@ classDiagram
 | Isa | `test_isa.cpp` | Value of all 26 opcodes, each opcode lies in the range of its format (`opcode >> 6`), operand encoding of `STORE`, `LOAD`, `PUSH`, `POP`, `MOVI`, `CALL` and `HLT` |
 | Loader | `test_loader.cpp` | Counting instruction lines with comments, blank lines, tabs and `\r\n`, load addresses from `0x00000` in steps of 4, little-endian, lower case and the `0x`/`0X` prefix, `00000000` to `FFFFFFFF`, memory after the program is kept, a loaded countdown runs on the CPU, invalid lines (wrong digit count, non-hex characters, two values, lone `0x`) throw with the correct line number, earlier lines are already written, 65,536 instructions fit, one more throws `out_of_range` |
 | Examples | `test_examples.cpp` | Every program in `examples/` is found, loads the expected number of instructions, halts within 1,000,000 steps and prints the expected output (`countdown`, `factorial`, `fibonacci`, `squares`), a missing file is reported |
+| Assembler | `test_assembler.cpp` | `parseLine()`: empty, whitespace-only and comment-only lines have no parts, instructions with 0, 1 and 3 operands, a comment after an instruction, spaces and tabs before the comment are no operand, spaces and tabs around the mnemonic and the commas are trimmed, a tab between mnemonic and operand, a label before an instruction, alone, before a comment and without a space after `:`, `[R1 + 8]` stays one operand, letter case is kept |
 
 ### Example programs
 

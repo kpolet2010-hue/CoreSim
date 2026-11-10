@@ -1,6 +1,54 @@
 # Assembler
 
-> **Specification, not implemented yet.** This document defines the assembly language for CoreSim-16 and how the assembler translates it into instructions. Nothing in it exists in the code so far. Programs are currently written in the hex text format (see [LOADER.md](LOADER.md)).
+> **Specification, partly implemented.** This document defines the assembly language for CoreSim-16 and how the assembler translates it into instructions. So far only splitting a line into its parts exists, see [Implementation status](#implementation-status). Programs are currently written in the hex text format (see [LOADER.md](LOADER.md)).
+
+## Implementation status
+
+| Part | Status |
+|------|--------|
+| Split a line into label, mnemonic and operands | ✅ `parseLine()`, see [Parsing a line](#parsing-a-line) |
+| Check mnemonics, registers and operand counts | ❌ not implemented |
+| Encode an instruction into 32 bits | ❌ not implemented |
+| Resolve labels in two passes | ❌ not implemented |
+| `coresim program.asm` | ❌ not implemented, `coresim` only runs `.hex` files |
+
+## Parsing a line
+
+> **Implemented.** `parseLine()` (`include/coresim/Assembler.h`, `src/Assembler.cpp`) splits one line of source text into its parts. It does not check them yet.
+
+```cpp
+ParsedLine p = parseLine("loop:   ADDI R1, R1, -1   ; count down");
+// p.label == "loop", p.mnemonic == "ADDI", p.operands == {"R1", "R1", "-1"}
+```
+
+`ParsedLine` is a plain struct:
+
+| Member | Type | Content |
+|--------|------|---------|
+| `label` | `std::string` | text before `:`, without the `:`, empty if there is no label |
+| `mnemonic` | `std::string` | first word after the label, empty if the line has no instruction |
+| `operands` | `std::vector<std::string>` | text after the mnemonic, split at `,`, empty if there are none |
+
+The line is processed in four steps:
+
+1. Cut off everything from `;`.
+2. If there is a `:`, the text before it is the label, the text after it is processed further.
+3. The first word, after skipping spaces and tabs, is the mnemonic.
+4. The rest is split at `,`, and spaces and tabs around each operand are removed.
+
+| Line | `label` | `mnemonic` | `operands` |
+|------|---------|------------|------------|
+| `""`, `"   "`, `"; comment"` | – | – | – |
+| `"HLT"`, `"HLT ; stop"` | – | `HLT` | – |
+| `"  ADD   R4 ,R1 ,  R2"` | – | `ADD` | `R4`, `R1`, `R2` |
+| `"loop:OUT R1"` | `loop` | `OUT` | `R1` |
+| `"end:   ; the end"` | `end` | – | – |
+| `"LOAD R3, [R1 + 8]"` | – | `LOAD` | `R3`, `[R1 + 8]` |
+| `"movi r1, 0x1C"` | – | `movi` | `r1`, `0x1C` |
+
+- **Memory operands stay whole.** `[R1 + 8]` contains no `,`, so it is one operand. Its spaces are kept.
+- **Letter case is kept.** `movi` is not changed to `MOVI`; ignoring letter case is part of the checks that are not implemented yet.
+- **No checks.** `parseLine("MOVE R1, R2, R3, R4")` returns the parts without an error. Unknown mnemonics, wrong operands and invalid labels are not detected yet.
 
 ## Why an assembler
 

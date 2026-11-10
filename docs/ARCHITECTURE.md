@@ -34,6 +34,7 @@ flowchart LR
 | `ALU` | `ALU.h` | Calculates results and flags of the ALU instructions, see [ALU](#alu) |
 | `CPU` | `CPU.h` | Groups registers, state, decoder, ALU and memory; `step()` fetches, decodes and executes one instruction, `run()` repeats it until `HLT` |
 | `loadHex` | `Loader.h` | Loads a program in hex text format into memory → [LOADER.md](LOADER.md) |
+| `parseLine` | `Assembler.h` | Splits a line of assembly into label, mnemonic and operands; the first part of the assembler → [ASSEMBLER.md](ASSEMBLER.md#parsing-a-line) |
 
 ## Shared types
 
