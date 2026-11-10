@@ -28,6 +28,7 @@ CoreSim is an emulator for a custom 16-bit CPU (**CoreSim-16**), written in C++1
 | ALU (`ALU`) | ✅ `ADD`, `ADDI`, `SUB`, `MUL`, `DIV`, `CMP`, `AND`, `OR`, `XOR`, `NOT` with Z, N, C, V, independent of the CPU | [ARCHITECTURE.md](docs/ARCHITECTURE.md#alu) |
 | CPU (`CPU`) | ✅ Owns registers, state, decoder and ALU, references memory and an output stream, `reset()`, `step()` (fetch, decode and all 26 instructions), `run()` until `HLT` | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | Program loader (`loadHex`) | ✅ Loads hex text programs with comments into memory, reports invalid lines with their line number | [LOADER.md](docs/LOADER.md) |
+| Command line (`coresim`) | ✅ Loads a hex file and runs it until `HLT`, reports errors with exit code 1 | [Running a program](#running-a-program) |
 
 `CPU::step()` fetches, decodes and executes one instruction. All 26 opcodes specified in [ISA.md](docs/ISA.md) are implemented. `OUT` writes to `std::cout` unless another stream is passed to the CPU. `CPU::run(maxSteps)` executes a whole program until `HLT`, with a step limit against endless loops.
 
@@ -38,10 +39,32 @@ Requirements: CMake ≥ 3.16, a C++17 compiler (GCC, Clang or MSVC), optionally 
 ```sh
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
-./build/coresim
 ```
 
-`coresim` currently prints `CoreSim v0.1`.
+## Running a program
+
+```sh
+./build/coresim examples/countdown.hex
+```
+
+```
+CoreSim v0.1
+3
+2
+1
+```
+
+`coresim` loads the hex file given as the first argument (see [LOADER.md](docs/LOADER.md)) and runs it until `HLT`. Without an argument it asks for the file name. The values written by `OUT` appear on the console.
+
+| Case | Message on stderr | Exit code |
+|------|-------------------|-----------|
+| program reaches `HLT` | – | `0` |
+| file cannot be opened | `error: could not open <file>` | `1` |
+| invalid line in the file | `error: line N: expected 8 hex digits` | `1` |
+| no `HLT` after 1,000,000 steps | `error: no HLT after 1000000 steps` | `1` |
+| the CPU throws (e.g. `DIV` by zero) | `error: <message>` | `1` |
+
+More programs are in [examples/](examples/README.md).
 
 ## Running tests
 
@@ -60,12 +83,12 @@ See [TESTING.md](docs/TESTING.md) for the test structure and CI.
 ## Project layout
 
 ```
-include/coresim/   public headers (ALU, Architecture, CPU, CPUState, Memory, Register, Decoder, DecodedInstruction, Opcode)
+include/coresim/   public headers (ALU, Architecture, CPU, CPUState, Memory, Register, Decoder, DecodedInstruction, Opcode, Loader)
 src/               implementation + main.cpp
 tests/             test suites (TestSuite base class, one suite per component)
 docs/              architecture documentation (Markdown + Mermaid)
 diagrams/          draw.io diagrams (registers & memory, data flow, decoder, ISA)
-examples/          example programs (none yet)
+examples/          example programs in hex text format
 .github/workflows/ CI pipeline (build + test on every push/PR to main)
 ```
 

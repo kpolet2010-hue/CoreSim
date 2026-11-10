@@ -55,7 +55,7 @@ std::size_t loadHex(std::istream& input, Memory& memory);
 
 - Reads the program from `input` and writes it to `memory`.
 - Returns the number of loaded instructions.
-- Takes a `std::istream`, so tests can pass a `std::istringstream` instead of a real file. Opening the file is left to the caller.
+- Takes a `std::istream`, so tests can pass a `std::istringstream` instead of a real file. Opening the file is left to the caller, `coresim` (`src/main.cpp`) does it with a `std::ifstream`. Example files are in [examples/](../examples/README.md).
 
 ```cpp
 Memory memory;
