@@ -6,6 +6,8 @@ This document describes the components that exist in CoreSim today and how they 
 
 All emulator code lives in the static library `coresim_core`. The executable `coresim` (`src/main.cpp`) and the test binary `coresim_tests` link against it.
 
+`coresim` opens the hex file given as the first argument (or asks for it), loads it with `loadHex()` and runs it with `CPU::run()` and a limit of 1,000,000 steps (see [README.md](../README.md#running-a-program)).
+
 ```mermaid
 flowchart LR
     subgraph lib["coresim_core (library)"]
@@ -291,6 +293,8 @@ Invalid accesses throw `std::out_of_range`:
 `ALU::execute()` throws `std::runtime_error` on `DIV` by zero. `CPU::step()` does not catch it.
 
 `loadHex()` throws `std::runtime_error` with the line number for a line that is not exactly 8 hex digits (see [LOADER.md](LOADER.md#errors)).
+
+`main()` in `src/main.cpp` catches every `std::exception` from loading and running, prints `error: <message>` to `stderr` and returns exit code 1. It does the same if the file cannot be opened or the program does not reach `HLT` within the step limit.
 
 `CPUState` setters never throw. They mask values to the register's bit width instead (see [REGISTERS.md](REGISTERS.md)).
 

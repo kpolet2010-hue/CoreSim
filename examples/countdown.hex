@@ -1,0 +1,9 @@
+; countdown.hex - counts down from 3 to 1
+; run: coresim examples/countdown.hex
+;
+; addr   hex        assembly
+40100003 ; 0x00  MOVI R1, 3
+0F010000 ; 0x04  loop: OUT R1
+4111FFFF ; 0x08        ADDI R1, R1, -1
+C2000004 ; 0x0C        JNZ loop
+0E000000 ; 0x10  HLT
