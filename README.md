@@ -107,6 +107,7 @@ examples/          example programs in assembly (.asm) and hex text format (.hex
 - [LOADER.md](docs/LOADER.md) – hex text format for programs and `loadHex()`
 - [ASSEMBLER.md](docs/ASSEMBLER.md) – assembly language, `assemble()` and `loadAsm()`
 - [DISASSEMBLER.md](docs/DISASSEMBLER.md) – instruction table, `disassemble()`
+- [DEBUGGER.md](docs/DEBUGGER.md) – interactive debugger with breakpoints (specification, not implemented yet)
 
 Diagrams (open with [draw.io](https://www.drawio.com/)):
 
