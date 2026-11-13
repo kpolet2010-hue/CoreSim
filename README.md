@@ -105,6 +105,7 @@ examples/          example programs in assembly (.asm) and hex text format (.hex
 - [TESTING.md](docs/TESTING.md) – test suites and CI
 - [LOADER.md](docs/LOADER.md) – hex text format for programs and `loadHex()`
 - [ASSEMBLER.md](docs/ASSEMBLER.md) – assembly language, `assemble()` and `loadAsm()`
+- [DISASSEMBLER.md](docs/DISASSEMBLER.md) – instruction back to assembly text (specification, not implemented yet)
 
 Diagrams (open with [draw.io](https://www.drawio.com/)):
 
