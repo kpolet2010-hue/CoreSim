@@ -29,6 +29,7 @@ CoreSim is an emulator for a custom 16-bit CPU (**CoreSim-16**), written in C++1
 | CPU (`CPU`) | ✅ Owns registers, state, decoder and ALU, references memory and an output stream, `reset()`, `step()` (fetch, decode and all 26 instructions), `run()` until `HLT` | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | Program loader (`loadHex`) | ✅ Loads hex text programs with comments into memory, reports invalid lines with their line number | [LOADER.md](docs/LOADER.md) |
 | Assembler (`assemble`, `loadAsm`) | ✅ Translates assembly with labels into instructions in two passes, reports errors with their line number | [ASSEMBLER.md](docs/ASSEMBLER.md) |
+| Disassembler (`disassemble`) | ✅ Turns an instruction back into assembly text that assembles to the same instruction, shows unknown opcodes as `???` | [DISASSEMBLER.md](docs/DISASSEMBLER.md) |
 | Command line (`coresim`) | ✅ Assembles a `.asm` file or loads a hex file and runs it until `HLT`, reports errors with exit code 1 | [Running a program](#running-a-program) |
 
 `CPU::step()` fetches, decodes and executes one instruction. All 26 opcodes specified in [ISA.md](docs/ISA.md) are implemented. `OUT` writes to `std::cout` unless another stream is passed to the CPU. `CPU::run(maxSteps)` executes a whole program until `HLT`, with a step limit against endless loops.
@@ -86,7 +87,7 @@ See [TESTING.md](docs/TESTING.md) for the test structure and CI.
 ## Project layout
 
 ```
-include/coresim/   public headers (ALU, Architecture, CPU, CPUState, Memory, Register, Decoder, DecodedInstruction, Opcode, Loader, Assembler)
+include/coresim/   public headers (ALU, Architecture, CPU, CPUState, Memory, Register, Decoder, DecodedInstruction, Opcode, Loader, InstructionTable, Assembler, Disassembler)
 src/               implementation + main.cpp
 tests/             test suites (TestSuite base class, one suite per component)
 docs/              architecture documentation (Markdown + Mermaid)
@@ -105,6 +106,7 @@ examples/          example programs in assembly (.asm) and hex text format (.hex
 - [TESTING.md](docs/TESTING.md) – test suites and CI
 - [LOADER.md](docs/LOADER.md) – hex text format for programs and `loadHex()`
 - [ASSEMBLER.md](docs/ASSEMBLER.md) – assembly language, `assemble()` and `loadAsm()`
+- [DISASSEMBLER.md](docs/DISASSEMBLER.md) – instruction table, `disassemble()`
 
 Diagrams (open with [draw.io](https://www.drawio.com/)):
 
