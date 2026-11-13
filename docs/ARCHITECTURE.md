@@ -34,7 +34,9 @@ flowchart LR
 | `ALU` | `ALU.h` | Calculates results and flags of the ALU instructions, see [ALU](#alu) |
 | `CPU` | `CPU.h` | Groups registers, state, decoder, ALU and memory; `step()` fetches, decodes and executes one instruction, `run()` repeats it until `HLT` |
 | `loadHex` | `Loader.h` | Loads a program in hex text format into memory → [LOADER.md](LOADER.md) |
+| `InstructionInfo`, `findInstruction` | `InstructionTable.h` | Name, opcode and operands of all 26 instructions, shared by assembler and disassembler → [DISASSEMBLER.md](DISASSEMBLER.md#instruction-table) |
 | `assemble`, `loadAsm`, `parseLine` | `Assembler.h` | Translates assembly into instructions and loads them into memory → [ASSEMBLER.md](ASSEMBLER.md) |
+| `disassemble` | `Disassembler.h` | Turns one instruction back into assembly text → [DISASSEMBLER.md](DISASSEMBLER.md) |
 
 ## Shared types
 

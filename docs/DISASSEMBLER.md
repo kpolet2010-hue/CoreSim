@@ -1,6 +1,6 @@
 # Disassembler
 
-> **Specification, not implemented yet.** This document defines how the disassembler turns a 32-bit instruction back into assembly text. Nothing in it exists in the code so far.
+This document defines how the disassembler (`include/coresim/Disassembler.h`, `src/Disassembler.cpp`) turns a 32-bit instruction back into assembly text. Everything in it is implemented.
 
 ## Purpose
 
@@ -21,7 +21,29 @@ std::string disassemble(Instruction instruction);
 
 - Takes one 32-bit instruction and returns one line of assembly text.
 - Uses `Decoder` to split the instruction into its fields, so it decodes exactly like the CPU.
+- Looks up the mnemonic and the operands by opcode with `findInstruction()` in the shared [instruction table](#instruction-table), the same table the assembler uses.
 - Does not throw, also not for unknown opcodes (see [Unknown opcodes](#unknown-opcodes)).
+
+## Instruction table
+
+`include/coresim/InstructionTable.h` holds one entry per instruction with its name, its opcode and its operands in assembly order:
+
+```cpp
+enum class Operand { Rd, Rs1, Rs2, Imm, Mem, Target };
+
+struct InstructionInfo {
+    const char* name;
+    Opcode opcode;
+    std::vector<Operand> operands;
+};
+
+const InstructionInfo* findInstruction(const std::string& mnemonic);  // assembler
+const InstructionInfo* findInstruction(Opcode opcode);                // disassembler
+```
+
+- Both functions return `nullptr` if there is no such instruction.
+- The search by name ignores letter case.
+- The assembler and the disassembler read the same table, so the operands of an instruction are defined only once.
 
 ## Output format
 

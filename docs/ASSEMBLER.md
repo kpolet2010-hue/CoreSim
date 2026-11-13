@@ -109,7 +109,7 @@ An error in the program is printed with its line number, and `coresim` exits wit
 error: line 3: 'ADD' expects 3 operands, got 2
 ```
 
-The assembler is its own component in `coresim_core`, independent of the CPU and the loader.
+The assembler is its own component in `coresim_core`, independent of the CPU and the loader. It finds the opcode and the operands of a mnemonic in the shared instruction table (`InstructionTable.h`), which the [disassembler](DISASSEMBLER.md#instruction-table) uses as well.
 
 ## Syntax
 
