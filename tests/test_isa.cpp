@@ -1,7 +1,11 @@
 #include "test_isa.h"
 
 #include "coresim/Decoder.h"
+#include "coresim/InstructionTable.h"
 #include "coresim/Opcode.h"
+
+#include <string>
+#include <vector>
 
 using namespace coresim;
 
@@ -117,4 +121,60 @@ void IsaTests::runTests() {
     DecodedInstruction hlt = decoder.decode(0x0E000000);
     check(hlt.opcode == static_cast<uint8_t>(Opcode::HLT), "Decoded Value: 0x0E000000, Opcode: HLT");
     check(hlt.rd == 0 && hlt.rs1 == 0 && hlt.rs2 == 0, "Decoded Value: 0x0E000000, Rd/Rs1/Rs2: 0 (unused)");
+
+    // instruction table: every opcode is found by its name and by its value
+    struct NamedOpcode {
+        const char* name;
+        Opcode opcode;
+    };
+    const std::vector<NamedOpcode> all = {
+        {"MOV", Opcode::MOV},   {"MOVI", Opcode::MOVI}, {"ADD", Opcode::ADD},     {"SUB", Opcode::SUB},
+        {"MUL", Opcode::MUL},   {"DIV", Opcode::DIV},   {"ADDI", Opcode::ADDI},   {"AND", Opcode::AND},
+        {"OR", Opcode::OR},     {"XOR", Opcode::XOR},   {"NOT", Opcode::NOT},     {"CMP", Opcode::CMP},
+        {"PUSH", Opcode::PUSH}, {"POP", Opcode::POP},   {"RET", Opcode::RET},     {"CALL", Opcode::CALL},
+        {"NOP", Opcode::NOP},   {"HLT", Opcode::HLT},   {"OUT", Opcode::OUT},     {"LOAD", Opcode::LOAD},
+        {"STORE", Opcode::STORE}, {"JMP", Opcode::JMP}, {"JZ", Opcode::JZ},       {"JNZ", Opcode::JNZ},
+        {"JN", Opcode::JN},     {"JC", Opcode::JC},
+    };
+    check(all.size() == 26, "InstructionTable: the test covers all 26 instructions");
+
+    for (const NamedOpcode& entry : all) {
+        const std::string name = entry.name;
+
+        const InstructionInfo* byName = findInstruction(name);
+        check(byName != nullptr && byName->opcode == entry.opcode,
+              ("InstructionTable: " + name + " is found by name with the right opcode").c_str());
+
+        const InstructionInfo* byOpcode = findInstruction(entry.opcode);
+        check(byOpcode != nullptr && byOpcode->name == name,
+              ("InstructionTable: " + name + " is found by opcode with the right name").c_str());
+        check(byOpcode == byName,
+              ("InstructionTable: " + name + " by name and by opcode is the same entry").c_str());
+    }
+
+    // instruction table: operands of one instruction per kind
+    const InstructionInfo* addi = findInstruction(Opcode::ADDI);
+    check(addi != nullptr && addi->operands == std::vector<Operand>{Operand::Rd, Operand::Rs1, Operand::Imm},
+          "InstructionTable: ADDI takes rd, rs1, imm");
+    const InstructionInfo* cmp = findInstruction(Opcode::CMP);
+    check(cmp != nullptr && cmp->operands == std::vector<Operand>{Operand::Rs1, Operand::Rs2},
+          "InstructionTable: CMP takes rs1, rs2 (no rd)");
+    const InstructionInfo* storeInfo = findInstruction(Opcode::STORE);
+    check(storeInfo != nullptr && storeInfo->operands == std::vector<Operand>{Operand::Rd, Operand::Mem},
+          "InstructionTable: STORE takes rd (value register), mem");
+    const InstructionInfo* hltInfo = findInstruction(Opcode::HLT);
+    check(hltInfo != nullptr && hltInfo->operands.empty(), "InstructionTable: HLT takes no operands");
+    const InstructionInfo* jnz = findInstruction(Opcode::JNZ);
+    check(jnz != nullptr && jnz->operands == std::vector<Operand>{Operand::Target}, "InstructionTable: JNZ takes a target");
+
+    // instruction table: letter case of the name is ignored
+    check(findInstruction("addi") == addi, "InstructionTable: lower case name is found");
+    check(findInstruction("AdDi") == addi, "InstructionTable: mixed case name is found");
+
+    // instruction table: unknown names and opcodes give nullptr
+    check(findInstruction("MOVE") == nullptr, "InstructionTable: unknown name gives nullptr");
+    check(findInstruction("") == nullptr, "InstructionTable: empty name gives nullptr");
+    check(findInstruction(static_cast<Opcode>(0x10)) == nullptr, "InstructionTable: unused opcode 0x10 gives nullptr");
+    check(findInstruction(static_cast<Opcode>(0x42)) == nullptr, "InstructionTable: unused opcode 0x42 gives nullptr");
+    check(findInstruction(static_cast<Opcode>(0xFF)) == nullptr, "InstructionTable: unused opcode 0xFF gives nullptr");
 }
