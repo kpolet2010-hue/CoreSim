@@ -10,6 +10,7 @@ add_executable(coresim_tests
     test_loader.cpp
     test_examples.cpp
     test_assembler.cpp
+    test_disassembler.cpp
 )
 target_link_libraries(coresim_tests PRIVATE coresim_core)
 target_compile_definitions(coresim_tests PRIVATE CORESIM_EXAMPLES_DIR="${PROJECT_SOURCE_DIR}/examples")
