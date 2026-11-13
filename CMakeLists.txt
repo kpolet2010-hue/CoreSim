@@ -24,6 +24,7 @@ add_library(coresim_core
     src/Assembler.cpp
     src/InstructionTable.cpp
     src/Disassembler.cpp
+    src/Debugger.cpp
 )
 target_include_directories(coresim_core PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
