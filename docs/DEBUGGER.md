@@ -163,7 +163,8 @@ PC  0x0000C  SP  0x00000  DBR 0  FLAGS ----
 ```
 
 - Shows `n` words of 16 bits read with `read16`, one per line, starting at `address` in steps of 2.
-- `n` must be at least 1. All words must lie inside the memory (last word at `0x3FFFE` at most).
+- Any address up to `0x3FFFE` is allowed, also odd ones.
+- `n` must be at least 1. The listing stops early at the end of the memory (last word at `0x3FFFE`).
 
 ### disasm
 
