@@ -3,6 +3,7 @@
 #include "coresim/CPU.h"
 #include "coresim/Loader.h"
 #include "coresim/Memory.h"
+#include "coresim/Debugger.h"
 
 #include <cstddef>
 #include <exception>
@@ -24,12 +25,19 @@ namespace {
 int main(int argc, char* argv[]) {
     std::cout << "CoreSim v" << coresim::kVersion << '\n';
     std::string pathToFile;
-    if (argc >= 2) {
-        pathToFile = argv[1];
+    bool debug = false;
+    int fileIndex = 1;
+    if (argc >= 2 && std::string(argv[1]) == "--debug") {
+        debug = true;
+        fileIndex = 2;
+    }
+    if (argc > fileIndex) {
+        pathToFile = argv[fileIndex];
     } else {
         std::cout << "Program file (.hex or .asm): ";
         std::getline(std::cin, pathToFile);
     }
+
 
     std::ifstream file(pathToFile);
     if (!file.is_open()) {
@@ -46,6 +54,13 @@ int main(int argc, char* argv[]) {
         } else {
             coresim::loadHex(file, memory);
         }
+
+        if (debug) {
+            coresim::Debugger debugger(cpu, std::cout);
+            debugger.run(std::cin);
+            return 0;
+        }
+
         if (!cpu.run(kMaxSteps)) {
             std::cerr << "error: no HLT after " << kMaxSteps << " steps\n";
             return 1;
