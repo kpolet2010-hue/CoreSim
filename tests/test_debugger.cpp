@@ -106,7 +106,7 @@ void DebuggerTests::runTests() {
         Session s;
         expect(s, "step", kLine4);
         check(s.lastResult, "step returns true");
-        expect(s, "s", kLine8);
+        expect(s, "s", "3\n" + kLine8);
         expect(s, "STEP", kLineC);
     }
     {
