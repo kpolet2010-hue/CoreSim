@@ -254,7 +254,7 @@ namespace coresim {
                 output_ << "error: invalid number '" << args[0] << "'\n";
                 return true;
             }
-            if (value < 0 || value > 0x3FFFC) {
+            if (value < 0 || value > 0x3FFFE) {
                 output_ << "error: invalid address '" << args[0] << "'\n";
                 return true;
             }
@@ -281,6 +281,59 @@ namespace coresim {
             }
             return true;
         }
+
+        if (name == "disasm" || name == "d") {
+            if (args.size() > 2) {
+                output_ << "error: usage: disasm [address] [n]\n";
+                return true;
+            }
+
+            Address address = cpu_.state().pc();          // default: from PC
+            if (args.size() >= 1) {
+                long long value = 0;
+                if (!parseNumber(args[0], value)) {
+                    output_ << "error: invalid number '" << args[0] << "'\n";
+                    return true;
+                }
+                if (value < 0 || value > 0x3FFFC || value % 4 != 0) {
+                    output_ << "error: invalid address '" << args[0] << "'\n";
+                    return true;
+                }
+                address = static_cast<Address>(value);
+            }
+
+            long long count = 5;                          // default without n
+            if (args.size() == 2) {
+                if (!parseNumber(args[1], count)) {
+                    output_ << "error: invalid number '" << args[1] << "'\n";
+                    return true;
+                }
+                if (count < 1) {
+                    output_ << "error: invalid count '" << args[1] << "'\n";
+                    return true;
+                }
+            }
+
+            for (long long i = 0; i < count && address <= 0x3FFFC; ++i) {
+                printLine(address);
+                address += 4;
+            }
+            return true;
+        }
+
+        if (name == "help" || name == "h") {
+            output_ << "step [n]              (s)  execute n instructions (default 1)\n"
+                    << "continue              (c)  run until HLT, a breakpoint or 1000000 steps\n"
+                    << "break [address]       (b)  set a breakpoint, list all without address\n"
+                    << "delete <address>           remove a breakpoint\n"
+                    << "regs                  (r)  show registers and flags\n"
+                    << "mem <address> [n]     (m)  show n 16-bit words (default 4)\n"
+                    << "disasm [address] [n]  (d)  show n instructions (default: from PC, 5)\n"
+                    << "help                  (h)  show this list\n"
+                    << "quit                  (q)  end the debugger\n";
+            return true;
+        }
+
 
 
         output_ << "error: unknown command '" << command << "'\n";
