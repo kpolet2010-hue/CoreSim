@@ -1,3 +1,4 @@
+// Written by me; Claude (AI) reviewed and gave advice on how to improve or solve problems. See README "Use of AI tools".
 #include "coresim/Debugger.h"
 #include "coresim/Disassembler.h"
 
@@ -87,6 +88,7 @@ namespace coresim {
             return false;
         }
 
+        // step: completed by Claude (AI) from my template
         if (name == "step" || name == "s") {
             if (args.size() > 1) {
                 output_ << "error: usage: step [n]\n";
@@ -123,6 +125,7 @@ namespace coresim {
             return true;
         }
 
+        // continue: written by Claude (AI)
         if (name == "continue" || name == "c") {
             if (!args.empty()) {
                 output_ << "error: usage: continue\n";

@@ -1,3 +1,4 @@
+// Written by me; Claude (AI) reviewed and gave advice on how to improve or solve problems. See README "Use of AI tools".
 #include "coresim/Assembler.h"
 #include "coresim/InstructionTable.h"
 #include "coresim/Opcode.h"

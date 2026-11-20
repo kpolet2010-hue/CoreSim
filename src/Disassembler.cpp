@@ -1,3 +1,4 @@
+// Written by me; Claude (AI) reviewed and gave advice on how to improve or solve problems. See README "Use of AI tools".
 #include "coresim/Disassembler.h"
 
 #include "coresim/Decoder.h"
@@ -55,7 +56,7 @@ namespace coresim {
                     }
                     text += "]";
                     break;
-                case Operand::Target: {
+                case Operand::Target: {                 // written by Claude (AI)
                     std::ostringstream target;
                     target << "0x"
                            << std::hex

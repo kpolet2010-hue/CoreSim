@@ -1,3 +1,4 @@
+// Written by Claude (AI); reviewed and run by me.
 #include "test_alu.h"
 #include "test_cpu.h"
 #include "test_memory.h"

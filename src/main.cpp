@@ -1,3 +1,4 @@
+// First version by Claude (AI); extended by me (.asm files, --debug). See README "Use of AI tools".
 #include "coresim/Architecture.h"
 #include "coresim/Assembler.h"
 #include "coresim/CPU.h"

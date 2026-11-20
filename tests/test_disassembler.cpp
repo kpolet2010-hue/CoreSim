@@ -1,3 +1,4 @@
+// Written by Claude (AI); reviewed and run by me.
 #include "test_disassembler.h"
 
 #include "coresim/Assembler.h"
