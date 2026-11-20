@@ -30,7 +30,8 @@ CoreSim is an emulator for a custom 16-bit CPU (**CoreSim-16**), written in C++1
 | Program loader (`loadHex`) | ✅ Loads hex text programs with comments into memory, reports invalid lines with their line number | [LOADER.md](docs/LOADER.md) |
 | Assembler (`assemble`, `loadAsm`) | ✅ Translates assembly with labels into instructions in two passes, reports errors with their line number | [ASSEMBLER.md](docs/ASSEMBLER.md) |
 | Disassembler (`disassemble`) | ✅ Turns an instruction back into assembly text that assembles to the same instruction, shows unknown opcodes as `???` | [DISASSEMBLER.md](docs/DISASSEMBLER.md) |
-| Command line (`coresim`) | ✅ Assembles a `.asm` file or loads a hex file and runs it until `HLT`, reports errors with exit code 1 | [Running a program](#running-a-program) |
+| Debugger (`Debugger`) | ✅ Steps through a program, stops at breakpoints, shows registers, memory and disassembled instructions | [DEBUGGER.md](docs/DEBUGGER.md) |
+| Command line (`coresim`) | ✅ Assembles a `.asm` file or loads a hex file and runs it until `HLT`, reports errors with exit code 1, starts the debugger with `--debug` | [Running a program](#running-a-program) |
 
 `CPU::step()` fetches, decodes and executes one instruction. All 26 opcodes specified in [ISA.md](docs/ISA.md) are implemented. `OUT` writes to `std::cout` unless another stream is passed to the CPU. `CPU::run(maxSteps)` executes a whole program until `HLT`, with a step limit against endless loops.
 
@@ -70,6 +71,26 @@ CoreSim v0.1
 
 More programs are in [examples/](examples/README.md).
 
+### Debugging a program
+
+```sh
+./build/coresim --debug examples/countdown.asm
+```
+
+```
+CoreSim v0.1
+> 0x00000  40100003  MOVI R1, 3
+(coresim) break 0x0C
+breakpoint at 0x0000C
+(coresim) continue
+3
+breakpoint at 0x0000C
+> 0x0000C  C2000004  JNZ 0x00004
+(coresim) quit
+```
+
+`--debug` loads the program the same way and then reads commands such as `step`, `continue`, `break`, `regs`, `mem` and `disasm` from the console instead of running it. `help` lists all commands, `quit` ends the debugger with exit code `0`. See [DEBUGGER.md](docs/DEBUGGER.md).
+
 ## Running tests
 
 ```sh
@@ -87,7 +108,7 @@ See [TESTING.md](docs/TESTING.md) for the test structure and CI.
 ## Project layout
 
 ```
-include/coresim/   public headers (ALU, Architecture, CPU, CPUState, Memory, Register, Decoder, DecodedInstruction, Opcode, Loader, InstructionTable, Assembler, Disassembler)
+include/coresim/   public headers (ALU, Architecture, CPU, CPUState, Memory, Register, Decoder, DecodedInstruction, Opcode, Loader, InstructionTable, Assembler, Disassembler, Debugger)
 src/               implementation + main.cpp
 tests/             test suites (TestSuite base class, one suite per component)
 docs/              architecture documentation (Markdown + Mermaid)
@@ -107,6 +128,7 @@ examples/          example programs in assembly (.asm) and hex text format (.hex
 - [LOADER.md](docs/LOADER.md) – hex text format for programs and `loadHex()`
 - [ASSEMBLER.md](docs/ASSEMBLER.md) – assembly language, `assemble()` and `loadAsm()`
 - [DISASSEMBLER.md](docs/DISASSEMBLER.md) – instruction table, `disassemble()`
+- [DEBUGGER.md](docs/DEBUGGER.md) – interactive debugger, its commands and `--debug`
 
 Diagrams (open with [draw.io](https://www.drawio.com/)):
 

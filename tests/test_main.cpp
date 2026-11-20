@@ -9,6 +9,7 @@
 #include "test_examples.h"
 #include "test_assembler.h"
 #include "test_disassembler.h"
+#include "test_debugger.h"
 #include <iostream>
 
 int main() {
@@ -26,6 +27,7 @@ int main() {
     failures += ExamplesTests().run();
     failures += AssemblerTests().run();
     failures += DisassemblerTests().run();
+    failures += DebuggerTests().run();
     if (failures == 0) {
         std::cout << "All tests passed\n";
     }
