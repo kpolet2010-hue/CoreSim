@@ -222,7 +222,7 @@ void DebuggerTests::runTests() {
                "R4  0x0000  R5  0x0000  R6  0x0000  R7  0x0000\n"
                "R8  0x0000  R9  0x0000  R10 0x0000  R11 0x0000\n"
                "R12 0x0000  R13 0x0000  R14 0x0000  R15 0x0000\n"
-               "PC  0x0000C  SP  0x00000  DBR 0  FLAGS ----\n");
+               "PC  0x0000C  SP  0x00000  DBR 0  FLAGS --C-\n");
     }
     {
         Session s;
