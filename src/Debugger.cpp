@@ -243,6 +243,46 @@ namespace coresim {
             return true;
         }
 
+        if (name == "mem" || name == "m") {
+            if (args.empty() || args.size() > 2) {
+                output_ << "error: usage: mem <address> [n]\n";
+                return true;
+            }
+
+            long long value = 0;
+            if (!parseNumber(args[0], value)) {
+                output_ << "error: invalid number '" << args[0] << "'\n";
+                return true;
+            }
+            if (value < 0 || value > 0x3FFFC) {
+                output_ << "error: invalid address '" << args[0] << "'\n";
+                return true;
+            }
+
+            long long count = 4;                          // default without n
+            if (args.size() == 2) {
+                if (!parseNumber(args[1], count)) {
+                    output_ << "error: invalid number '" << args[1] << "'\n";
+                    return true;
+                }
+                if (count < 1) {
+                    output_ << "error: invalid count '" << args[1] << "'\n";
+                    return true;
+                }
+            }
+
+            Address address = static_cast<Address>(value);
+            for (long long i = 0; i < count && address <= 0x3FFFE; ++i) {
+                output_ << formatAddress(address) << "  "
+                        << std::hex << std::uppercase << std::setfill('0') << std::setw(4)
+                        << cpu_.memory().read16(address)
+                        << std::dec << '\n';
+                address += 2;
+            }
+            return true;
+        }
+
+
         output_ << "error: unknown command '" << command << "'\n";
         return true;
     }
