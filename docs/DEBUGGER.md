@@ -1,6 +1,6 @@
 # Debugger
 
-> **Specification, not implemented yet.** This document defines an interactive debugger for CoreSim-16. Nothing in it exists in the code so far.
+This document defines the interactive debugger of CoreSim-16 (`include/coresim/Debugger.h`, `src/Debugger.cpp`) and how `coresim --debug` starts it. Everything in it is implemented.
 
 ## Purpose
 

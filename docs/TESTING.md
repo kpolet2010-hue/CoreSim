@@ -26,6 +26,7 @@ The test binary prints each check and a summary per suite:
 [Examples] passed
 [Assembler] passed
 [Disassembler] passed
+[Debugger] passed
 All tests passed
 ```
 
@@ -54,6 +55,7 @@ classDiagram
     TestSuite <|-- ExamplesTests
     TestSuite <|-- AssemblerTests
     TestSuite <|-- DisassemblerTests
+    TestSuite <|-- DebuggerTests
 ```
 
 | File | Purpose |
@@ -84,6 +86,7 @@ classDiagram
 | Examples | `test_examples.cpp` | Every program in `examples/` is found, loads the expected number of instructions, halts within 1,000,000 steps and prints the expected output (`countdown`, `factorial`, `fibonacci`, `squares`), every `.asm` example assembles to exactly the instructions of its `.hex` file and prints the same, a missing file is reported |
 | Assembler | `test_assembler.cpp` | `parseLine()`: empty, whitespace-only and comment-only lines have no parts, instructions with 0, 1 and 3 operands, a comment after an instruction, spaces and tabs before the comment are no operand, spaces and tabs around the mnemonic, the commas and the label are trimmed, a tab between mnemonic and operand, a label before an instruction, alone, before a comment and without a space after `:`, `[R1 + 8]` stays one operand, letter case is kept. `assemble()`: encoding of all 26 instructions, R0 to R15, decimal, negative and hex numbers at the range limits, memory operands with positive, negative, hex and limit offsets, jump targets as numbers, letter case of mnemonics and registers, empty programs, `\r\n`, the countdown from `ASSEMBLER.md`, labels defined further down, at address 0, alone in a line, after the last instruction, indented, with `_` and digits, letter case of labels. Every error from `ASSEMBLER.md` with its exact message and line number, 65,536 instructions fit and one more does not. `loadAsm()` writes little-endian from `0x00000`, returns the count and leaves memory unchanged after an error |
 | Disassembler | `test_disassembler.cpp` | The examples from `DISASSEMBLER.md` and one instruction per opcode, R0 to R15, `imm` as signed decimal at the range limits, offsets positive, negative, 0 and at the range limits, jump targets with 5 hex digits up to `0x3FFFF`, unused fields are not shown, unknown opcodes give `??? 0x…` without an exception, `0x00000000` is `MOV R0, R0`, every example assembles back to the same instruction |
+| Debugger | `test_debugger.cpp` | Every command from `DEBUGGER.md` with its exact output on a captured stream that also receives `OUT`: empty lines, letter case, `quit` and `q` return `false`, unknown commands. `step` with and without `n`, decimal and hex counts, stopping at `HLT`, on a halted CPU, ignoring breakpoints. `continue` to a breakpoint, leaving it again, to `HLT`, with a breakpoint at PC, the limit of 1,000,000 steps in an endless loop. `DIV` by zero during `step` and `continue` prints the error and the next line. `break` and `delete` with valid, unaligned, too large and negative addresses, sorted list, duplicates. `regs` with all registers, PC, SP, DBR and every flag. `mem` with default count, odd addresses and the end of memory. `disasm` from PC and from an address, the PC marker, unknown opcodes, the end of memory. Every usage, number, address and count error, `help` lists every command, `run()` prints the prompt and stops at `quit` or the end of the input |
 
 ### Example programs
 

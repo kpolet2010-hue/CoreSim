@@ -6,7 +6,7 @@ This document describes the components that exist in CoreSim today and how they 
 
 All emulator code lives in the static library `coresim_core`. The executable `coresim` (`src/main.cpp`) and the test binary `coresim_tests` link against it.
 
-`coresim` opens the file given as the first argument (or asks for it), assembles it with `loadAsm()` if it ends in `.asm` or loads it with `loadHex()` otherwise, and runs it with `CPU::run()` and a limit of 1,000,000 steps (see [README.md](../README.md#running-a-program)).
+`coresim` opens the file given as the first argument (or asks for it), assembles it with `loadAsm()` if it ends in `.asm` or loads it with `loadHex()` otherwise, and runs it with `CPU::run()` and a limit of 1,000,000 steps (see [README.md](../README.md#running-a-program)). With `--debug` as the first argument it starts a `Debugger` on the console instead of running the program.
 
 ```mermaid
 flowchart LR
@@ -37,6 +37,7 @@ flowchart LR
 | `InstructionInfo`, `findInstruction` | `InstructionTable.h` | Name, opcode and operands of all 26 instructions, shared by assembler and disassembler → [DISASSEMBLER.md](DISASSEMBLER.md#instruction-table) |
 | `assemble`, `loadAsm`, `parseLine` | `Assembler.h` | Translates assembly into instructions and loads them into memory → [ASSEMBLER.md](ASSEMBLER.md) |
 | `disassemble` | `Disassembler.h` | Turns one instruction back into assembly text → [DISASSEMBLER.md](DISASSEMBLER.md) |
+| `Debugger` | `Debugger.h` | Runs commands on a CPU with a loaded program: step, continue, breakpoints, registers, memory, disassembly → [DEBUGGER.md](DEBUGGER.md) |
 
 ## Shared types
 
