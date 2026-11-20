@@ -117,6 +117,38 @@ namespace coresim {
             return true;
         }
 
+        if (name == "regs" || name == "r") {
+            if (!args.empty()) {
+                output_ << "error: usage: regs\n";
+                return true;
+            }
+
+            output_ << std::hex << std::uppercase << std::setfill('0');
+
+            // R0-R15, four per line
+            for (std::size_t i = 0; i < kRegisterCount; ++i) {
+                std::string reg = "R" + std::to_string(i);
+                if (reg.size() < 3) {
+                    reg += ' ';                                   // "R0" -> "R0 ", "R10" stays
+                }
+                output_ << reg << " 0x" << std::setw(4) << cpu_.registers().get(i);
+                output_ << (i % 4 == 3 ? "\n" : "  ");          // after R3, R7, R11, R15: new line
+            }
+
+            std::string flags = "----";
+            if (cpu_.state().flag(kFlagZ)) { flags[0] = 'Z'; }
+            if (cpu_.state().flag(kFlagN))    { flags[1] = 'N'; }
+            if (cpu_.state().flag(kFlagC)) { flags[2] = 'C'; }
+            if (cpu_.state().flag(kFlagV)) { flags[3] = 'V'; }
+
+            output_ << "PC  0x" << std::setw(5) << cpu_.state().pc()
+                    << "  SP  0x" << std::setw(5) << cpu_.state().sp()
+                    << "  DBR " << std::dec << static_cast<int>(cpu_.state().dbr())
+                    << "  FLAGS " << flags << '\n';
+            return true;
+        }
+
+
         output_ << "error: unknown command '" << command << "'\n";
         return true;
     }
