@@ -1,8 +1,56 @@
-# CoreSim
-
+# CoreSim – a 16-bit CPU emulator with assembler and debugger
+#### Video Demo:  <URL HERE>
+#### Description:
 [![CI](https://github.com/kpolet2010-hue/CoreSim/actions/workflows/ci.yml/badge.svg)](https://github.com/kpolet2010-hue/CoreSim/actions/workflows/ci.yml)
 
-CoreSim is an emulator for a custom 16-bit CPU (**CoreSim-16**), written in C++17.
+CoreSim is a custom 16-bit CPU emulator written in C++17. Instead of emulating an existing processor, I designed my own CPU architecture, including its instruction set, registers, memory layout and instruction formats.
+
+Around the CPU, I also built an assembler with label support, a disassembler and an interactive debugger. I chose this project because I wanted to understand how processors work internally, how machine instructions are executed and how software interacts with hardware at a low level. Building my own CPU allowed me to explore these concepts by implementing every part myself.
+
+### How to use it
+
+CoreSim is built with CMake (see [Building](#building)). `coresim program.asm` assembles a program and runs it until `HLT`, `coresim program.hex` loads a program in hex text instead. `coresim --debug program.asm` starts the debugger, where the program can be run step by step, stopped at breakpoints and inspected. Four example programs are in [examples/](examples/README.md). The test binary `coresim_tests` checks every component and runs on every push in GitHub Actions.
+
+### Files
+
+| Files | Contents |
+|-------|----------|
+| `include/coresim/Architecture.h`, `Opcode.h` | Shared types (`Word`, `Instruction`, `Address`), the memory size and the values of the 26 opcodes |
+| `Memory`, `Register`, `CPUState` | 256 KB of byte-addressed little-endian RAM with bounds checking; the registers R0–R15; the special registers PC, SP, IR, DBR and FLAGS, masked to their bit widths |
+| `Decoder`, `DecodedInstruction` | Splits a 32-bit instruction into its fields. The top two opcode bits select one of the four formats R, I, M and J |
+| `ALU`, `CPU` | The ALU computes results and the flags Z, N, C, V without knowing the CPU. The CPU fetches, decodes and executes one instruction per `step()` and repeats it in `run()` until `HLT` |
+| `Loader`, `Assembler` | `loadHex()` loads programs written as hex text. `assemble()` translates assembly with labels in two passes and reports errors with their line number |
+| `InstructionTable`, `Disassembler` | One table with the name, opcode and operands of every instruction, used by both the assembler and the disassembler. `disassemble()` turns an instruction back into text |
+| `Debugger` | Runs debugger commands (`step`, `continue`, `break`, `delete`, `regs`, `mem`, `disasm`, `help`, `quit`) on a CPU. `execute()` runs one command, `run()` reads them from the console |
+| `src/main.cpp` | The `coresim` program: reads the arguments, loads `.asm` or hex files, runs the program or starts the debugger with `--debug`, reports errors with exit code 1 |
+| `tests/` | A small test framework (`TestSuite.h`) and one test suite per component, 12 in total |
+| `examples/` | Four example programs (`countdown`, `factorial`, `fibonacci`, `squares`), each as `.asm` and `.hex` |
+| `docs/`, `diagrams/` | One Markdown document per component and draw.io diagrams of the registers, memory, data flow, decoder and instruction set |
+| `CMakeLists.txt`, `.github/workflows/ci.yml` | Build configuration for the library `coresim_core`, the program and the tests; CI that builds and tests every push |
+
+The headers are in `include/coresim/`, the implementations with the same name in `src/`.
+
+### Design choices
+
+**My own CPU instead of an existing one.** I could have emulated an existing CPU like the 6502, which already has test programs available. Instead, I decided to create my own instruction set. This meant I had to make all the important decisions myself, such as bit widths, instruction formats and flags. It also helped me understand how real CPUs work while keeping the project manageable.
+
+**Fixed 32-bit instructions.** Using different instruction lengths could save memory, but I decided that every CoreSim instruction should be exactly 32 bits long. The first two bits of the opcode determine which format is used. This means the PC always increases by 4, and the decoder only needs simple bit operations. It uses a bit more memory, but makes the decoder easier to implement and test.
+
+**A two-pass assembler.** A jump instruction like `JNZ loop` can refer to a label that appears later in the code. Since its address is not known yet, the assembler needs two passes. The first pass collects all labels and their addresses. The second pass translates the instructions into machine code.
+
+**One instruction table for assembler and disassembler.** Instead of having two separate lists for instruction names and opcodes, I use one shared table. The assembler searches by instruction name, while the disassembler searches by opcode. This avoids duplicate information and prevents the two lists from getting out of sync.
+
+**A testable debugger.** The debugger does not handle keyboard input directly. Instead, `execute()` receives a command as a string and writes its output to a stream. The `run()` function simply handles the input loop. This makes it possible to test every debugger command automatically without having to type anything manually.
+
+### Use of AI tools
+
+I designed and built CoreSim myself over about three weeks in November 2026, using Claude (Anthropic) as a tutor and assistant, as allowed for the CS50 final project.
+
+**My work:** the CPU and its instruction set, the ALU, decoder, memory and registers, the loader, the assembler with labels, the disassembler and the debugger. I wrote this logic step by step, decided how the components fit together and fixed my own bugs with the help of the tests. Claude explained concepts, asked guiding questions and, where I was stuck, gave me templates with gaps to fill in. A few small pieces it completed directly; those are marked in the code.
+
+**Generated with Claude and reviewed by me:** the unit tests, which I used for test-driven development, the Markdown documentation and diagrams, the file overview and usage section of this README, a first draft of the text describing my design choices (which I rewrote), the example `.hex` files and some boilerplate (CMake setup, empty class skeletons, the shared instruction table).
+
+---
 
 ## Architecture at a glance
 
